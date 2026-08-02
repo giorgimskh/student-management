@@ -1,4 +1,4 @@
-package com.example.student_management;
+package com.example.student_management.service;
 
 import com.example.student_management.domain.Student;
 import com.example.student_management.repository.StudentRepository;
