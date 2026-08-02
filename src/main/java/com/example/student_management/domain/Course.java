@@ -1,9 +1,7 @@
 package com.example.student_management.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,5 +21,7 @@ public class Course {
     private String code;
 
     @ManyToMany(mappedBy ="courses", fetch=FetchType.LAZY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Set<Student> students=new HashSet<>();
 }
