@@ -20,5 +20,11 @@ public class Book {
     private String isbn;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "student_id",         // Customizes the foreign key column name
+            referencedColumnName = "id", // Points to the primary key of the parent
+            nullable = false,            // Makes the foreign key NOT NULL
+            unique = false
+    )
     private Student student;
 }
