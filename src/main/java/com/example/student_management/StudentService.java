@@ -25,7 +25,6 @@ public class StudentService {
         return studentRepository.findById(id).orElseThrow(()->new RuntimeException("Student not found with id: " + id));
     }
 
-
     public Student updateStudent(UUID id, Student studentDetails) {
         Student student = getStudentById(id);
         student.setName(studentDetails.getName());
@@ -36,6 +35,4 @@ public class StudentService {
     public void deleteStudent(UUID id){
         studentRepository.deleteById(id);
     }
-
-
 }
