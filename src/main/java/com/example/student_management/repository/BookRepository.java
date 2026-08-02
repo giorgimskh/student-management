@@ -1,9 +1,10 @@
 package com.example.student_management.repository;
 
-import com.example.student_management.domain.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.awt.print.Book;
 import java.util.UUID;
 
-public interface StudentRepository extends JpaRepository<Student, UUID> {
+public interface BookRepository extends JpaRepository<Book, UUID> {
+
 }
