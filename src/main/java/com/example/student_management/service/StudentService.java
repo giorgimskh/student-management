@@ -58,4 +58,15 @@ public class StudentService {
 
         return student;
     }
+
+    public List<Book> getBooksByStudent(UUID studentId){
+        Student student = getStudentById(studentId);
+        return student.getBooks();
+    }
+
+    public void removeBookFromStudent(UUID studentId,UUID bookId){
+        Book book = bookRepository.findById(bookId).orElseThrow(()->new RuntimeException("Book with such id not found"));
+        book.setStudent(null);
+        bookRepository.save(book);
+    }
 }
