@@ -1,11 +1,13 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.domain.Course;
 import com.example.student_management.service.StudentService;
 import com.example.student_management.domain.Student;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import com.example.student_management.domain.Book;
 
@@ -57,6 +59,22 @@ public class StudentController {
     @DeleteMapping("/{studentId}/books/{bookId}")
     public ResponseEntity<Void> removeBookFromStudent(@PathVariable UUID studentId,@PathVariable UUID bookId){
         studentService.removeBookFromStudent(studentId,bookId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{studentId}/courses/{courseId}")
+    public ResponseEntity<Student> enrollStudentInCourse(@PathVariable UUID studentId, @PathVariable UUID courseId){
+        return ResponseEntity.ok(studentService.enrollInCourse(studentId,courseId));
+    }
+
+    @GetMapping("/{studentId}/courses")
+    public ResponseEntity<Set<Course>> getCoursesByStudent(@PathVariable UUID studentId){
+        return ResponseEntity.ok(studentService.getCoursesByStudent(studentId));
+    }
+
+    @DeleteMapping("/{studentId}/courses/{courseId}")
+    public ResponseEntity<Void> removeStudentFromCourse(@PathVariable UUID studentId,@PathVariable UUID courseId){
+        studentService.removeBookFromStudent(studentId,courseId);
         return ResponseEntity.noContent().build();
     }
 
