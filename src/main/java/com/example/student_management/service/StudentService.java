@@ -1,5 +1,6 @@
 package com.example.student_management.service;
 
+import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import com.example.student_management.domain.Book;
 
@@ -68,5 +70,26 @@ public class StudentService {
         Book book = bookRepository.findById(bookId).orElseThrow(()->new RuntimeException("Book with such id not found"));
         book.setStudent(null);
         bookRepository.save(book);
+    }
+
+    public Student enrollInCourse(UUID courseId,UUID studentId){
+        Student student=getStudentById(studentId);
+        Course course=courseRepository.findById(courseId).orElseThrow(()->new RuntimeException("Course not found with id: "+courseId));
+        student.getCourses().add(course);
+        course.getStudents().add(student);
+        return studentRepository.save(student);
+    }
+
+    public Set<Course> getCoursesByStudent(UUID studentId){
+        Student student=getStudentById(studentId);
+        return student.getCourses();
+    }
+
+    public void removeStudentFromCourse(UUID studentId,UUID courseId){
+        Student student=getStudentById(studentId);
+        Course course=courseRepository.findById(courseId).orElseThrow(()->new RuntimeException("Course not found with id"+courseId));
+        student.getCourses().remove(course);
+        course.getStudents().remove(student);
+        studentRepository.save(student);
     }
 }
