@@ -1,11 +1,13 @@
-package com.example.student_management;
+package com.example.student_management.controller;
 
+import com.example.student_management.service.StudentService;
 import com.example.student_management.domain.Student;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import com.example.student_management.domain.Book;
 
 @RestController
 @RequestMapping("/api/students")
@@ -41,4 +43,21 @@ public class StudentController {
         studentService.deleteStudent(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{studentId}/books/{bookId}")
+    public ResponseEntity<Student> assignBookToStudent(@PathVariable UUID studentId,@PathVariable UUID bookId){
+        return ResponseEntity.ok(studentService.assignBookToStudent(studentId,bookId));
+    }
+
+    @GetMapping("/{studentId}/books")
+    public ResponseEntity<List<Book>> getBookByStudent(@PathVariable UUID studentId){
+        return ResponseEntity.ok(studentService.getBooksByStudent(studentId));
+    }
+
+    @DeleteMapping("/{studentId}/books/{bookId}")
+    public ResponseEntity<Void> removeBookFromStudent(@PathVariable UUID studentId,@PathVariable UUID bookId){
+        studentService.removeBookFromStudent(studentId,bookId);
+        return ResponseEntity.noContent().build();
+    }
+
 }
