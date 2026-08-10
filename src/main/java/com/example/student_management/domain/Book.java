@@ -1,9 +1,8 @@
 package com.example.student_management.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
@@ -25,8 +24,11 @@ public class Book {
     @JoinColumn(
             name = "student_id",         // Customizes the foreign key column name
             referencedColumnName = "id", // Points to the primary key of the parent
-            nullable = false,            // Makes the foreign key NOT NULL
+            nullable = true,
             unique = false
     )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Student student;
 }

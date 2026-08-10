@@ -30,17 +30,17 @@ public class StudentController {
         return ResponseEntity.ok(studentService.createStudent(student));
     }
 
-    @GetMapping("/id")
+    @GetMapping("/{id}")
     public ResponseEntity<Student> getStudentById(@PathVariable UUID id){
         return ResponseEntity.ok(studentService.getStudentById(id));
     }
 
-    @PutMapping("/id")
+    @PutMapping("/{id}")
     public ResponseEntity<Student> updateStudent(@PathVariable UUID id,@RequestBody Student student){
         return ResponseEntity.ok(studentService.updateStudent(id,student));
     }
 
-    @DeleteMapping("/id")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(@PathVariable UUID id){
         studentService.deleteStudent(id);
         return ResponseEntity.noContent().build();
@@ -62,6 +62,7 @@ public class StudentController {
         return ResponseEntity.noContent().build();
     }
 
+
     @PostMapping("/{studentId}/courses/{courseId}")
     public ResponseEntity<Student> enrollStudentInCourse(@PathVariable UUID studentId, @PathVariable UUID courseId){
         return ResponseEntity.ok(studentService.enrollInCourse(studentId,courseId));
@@ -74,7 +75,7 @@ public class StudentController {
 
     @DeleteMapping("/{studentId}/courses/{courseId}")
     public ResponseEntity<Void> removeStudentFromCourse(@PathVariable UUID studentId,@PathVariable UUID courseId){
-        studentService.removeBookFromStudent(studentId,courseId);
+        studentService.removeStudentFromCourse(studentId,courseId);
         return ResponseEntity.noContent().build();
     }
 

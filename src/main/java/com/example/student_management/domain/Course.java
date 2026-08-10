@@ -1,5 +1,6 @@
 package com.example.student_management.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,5 +24,6 @@ public class Course {
     @ManyToMany(mappedBy ="courses", fetch=FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Set<Student> students=new HashSet<>();
 }

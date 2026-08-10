@@ -5,6 +5,7 @@ import com.example.student_management.domain.Student;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
 import com.example.student_management.repository.StudentRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -72,7 +73,8 @@ public class StudentService {
         bookRepository.save(book);
     }
 
-    public Student enrollInCourse(UUID courseId,UUID studentId){
+    @Transactional
+    public Student enrollInCourse(UUID studentId,UUID courseId){
         Student student=getStudentById(studentId);
         Course course=courseRepository.findById(courseId).orElseThrow(()->new RuntimeException("Course not found with id: "+courseId));
         student.getCourses().add(course);
