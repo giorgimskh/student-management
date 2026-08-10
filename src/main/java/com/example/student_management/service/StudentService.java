@@ -16,10 +16,9 @@ import com.example.student_management.domain.Book;
 
 @Service
 public class StudentService {
-    @Autowired
-    private StudentRepository studentRepository;
-    private BookRepository bookRepository;
-    private CourseRepository courseRepository;
+    private final StudentRepository studentRepository;
+    private final BookRepository bookRepository;
+    private final CourseRepository courseRepository;
 
     public StudentService(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository) {
         this.studentRepository = studentRepository;
