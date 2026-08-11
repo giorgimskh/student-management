@@ -3,6 +3,7 @@ package com.example.student_management.controller;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
 import com.example.student_management.service.CourseService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/courses")
+@RequestMapping("/api/courses")
 public class CourseController {
 
     private final CourseService courseService;
@@ -32,7 +33,7 @@ public class CourseController {
     }
 
     @PostMapping
-    public ResponseEntity<Course> createCourse(@RequestBody Course course) {
+    public ResponseEntity<Course> createCourse(@Valid @RequestBody Course course) {
         return new ResponseEntity<>(courseService.createCourse(course), HttpStatus.CREATED);
     }
 

@@ -2,6 +2,7 @@ package com.example.student_management.controller;
 
 import com.example.student_management.domain.Student;
 import com.example.student_management.service.BookService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.student_management.domain.Book;
@@ -29,7 +30,7 @@ public class BookController {
     }
 
     @PostMapping
-    public ResponseEntity<Book> createBook(@RequestBody Book book){
+    public ResponseEntity<Book> createBook(@Valid @RequestBody Book book){
         return ResponseEntity.ok(bookService.createBook(book));
     }
 

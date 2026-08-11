@@ -3,6 +3,7 @@ package com.example.student_management.controller;
 import com.example.student_management.domain.Course;
 import com.example.student_management.service.StudentService;
 import com.example.student_management.domain.Student;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +27,7 @@ public class StudentController {
     }
 
     @PostMapping
-    public ResponseEntity<Student> createStudent(@RequestBody Student student){
+    public ResponseEntity<Student> createStudent(@Valid @RequestBody Student student){
         return ResponseEntity.ok(studentService.createStudent(student));
     }
 
@@ -36,7 +37,7 @@ public class StudentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Student> updateStudent(@PathVariable UUID id,@RequestBody Student student){
+    public ResponseEntity<Student> updateStudent(@PathVariable UUID id,@Valid @RequestBody Student student){
         return ResponseEntity.ok(studentService.updateStudent(id,student));
     }
 
