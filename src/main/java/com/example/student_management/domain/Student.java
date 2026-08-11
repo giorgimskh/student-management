@@ -28,7 +28,7 @@ public class Student {
     @NotBlank(message = "Email cant be blank")
     private String email;
 
-    private Instant createdAt= Instant.now();
+    private Instant createdAt;
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

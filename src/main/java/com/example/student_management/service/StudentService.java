@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -26,6 +28,7 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final BookRepository bookRepository;
     private final CourseRepository courseRepository;
+    private Clock Clock;
 
     public StudentService(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository) {
         this.studentRepository = studentRepository;
@@ -45,6 +48,8 @@ public class StudentService {
     public Student  createStudent(Student student){
         if(studentRepository.findByEmail(student.getEmail()).isPresent())
             throw new DuplicateEmailException("A student with email '" + student.getEmail() + "' already exists.");
+
+        student.setCreatedAt(Instant.now(Clock));
         return studentRepository.save(student);
     }
 
