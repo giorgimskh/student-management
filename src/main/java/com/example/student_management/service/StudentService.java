@@ -28,12 +28,13 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final BookRepository bookRepository;
     private final CourseRepository courseRepository;
-    private Clock Clock;
+    private final Clock clock;
 
-    public StudentService(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository) {
+    public StudentService(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository,Clock clock) {
         this.studentRepository = studentRepository;
         this.bookRepository = bookRepository;
         this.courseRepository = courseRepository;
+        this.clock=clock;
     }
 
     @PostConstruct
@@ -49,7 +50,7 @@ public class StudentService {
         if(studentRepository.findByEmail(student.getEmail()).isPresent())
             throw new DuplicateEmailException("A student with email '" + student.getEmail() + "' already exists.");
 
-        student.setCreatedAt(Instant.now(Clock));
+        student.setCreatedAt(Instant.now(clock));
         return studentRepository.save(student);
     }
 
