@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-import com.example.student_management.domain.Book;
 
+import java.time.Instant;
 import java.util.*;
 
 @Entity
@@ -28,6 +28,7 @@ public class Student {
     @NotBlank(message = "Email cant be blank")
     private String email;
 
+    private Instant createdAt= Instant.now();
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

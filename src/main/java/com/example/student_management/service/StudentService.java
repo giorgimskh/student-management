@@ -9,8 +9,10 @@ import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
 import com.example.student_management.repository.StudentRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import com.example.student_management.domain.Book;
 
 @Service
 public class StudentService {
+    private static final Logger log = LoggerFactory.getLogger(StudentService.class);
     private final StudentRepository studentRepository;
     private final BookRepository bookRepository;
     private final CourseRepository courseRepository;
@@ -28,6 +31,11 @@ public class StudentService {
         this.studentRepository = studentRepository;
         this.bookRepository = bookRepository;
         this.courseRepository = courseRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        log.info("StudentService initialized successfully and ready to process requests.");
     }
 
     public List<Student> getAllStudents(){

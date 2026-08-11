@@ -43,7 +43,7 @@ public class BookService {
         Book book = bookRepository.findById(bookId).orElseThrow(()->new ResourceNotFoundException("No book found with id: " + bookId));
 
         if(book.getStudent()==null){
-            throw new RuntimeException("Book with id: "+bookId+ " has no owner");
+            throw new ResourceNotFoundException("Book with id: "+bookId+ " has no owner");
         }
         return book.getStudent();
     }
