@@ -52,7 +52,15 @@ public class GlobalExceptionHandler {
 
         error.put("error", "An unexpected internal server error occurred.");
 
-
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String,String>> handleResourceNotFoundException(Exception ex){
+        Map<String, String> error = new HashMap<>();
+
+        error.put("error", "Resource not found");
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 }

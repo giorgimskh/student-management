@@ -5,6 +5,7 @@ import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.BookAlreadyAssignedException;
 import com.example.student_management.exceptions.DuplicateEmailException;
 import com.example.student_management.exceptions.InvalidEnrollmentException;
+import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
 import com.example.student_management.repository.StudentRepository;
@@ -40,7 +41,7 @@ public class StudentService {
     }
 
     public Student getStudentById(UUID id){
-        return studentRepository.findById(id).orElseThrow(()->new RuntimeException("Student not found with id: " + id));
+        return studentRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Student not found with id: " + id));
     }
 
     public Student updateStudent(UUID id, Student studentDetails) {
@@ -56,7 +57,7 @@ public class StudentService {
 
     public Student assignBookToStudent(UUID studentId,UUID bookId){
         Student student = getStudentById(studentId);
-        Book book =bookRepository.findById(bookId).orElseThrow(()->new RuntimeException("Book not found with id: " + bookId));
+        Book book =bookRepository.findById(bookId).orElseThrow(()->new ResourceNotFoundException("Book not found with id: " + bookId));
 
         if(book.getStudent()!=null)
             throw new BookAlreadyAssignedException("Book is already assigned to student");
@@ -74,7 +75,7 @@ public class StudentService {
     }
 
     public void removeBookFromStudent(UUID studentId,UUID bookId){
-        Book book = bookRepository.findById(bookId).orElseThrow(()->new RuntimeException("Book with such id not found"));
+        Book book = bookRepository.findById(bookId).orElseThrow(()->new ResourceNotFoundException("Book with such id not found"));
         book.setStudent(null);
         bookRepository.save(book);
     }
@@ -82,7 +83,7 @@ public class StudentService {
     @Transactional
     public Student enrollInCourse(UUID studentId,UUID courseId){
         Student student=getStudentById(studentId);
-        Course course=courseRepository.findById(courseId).orElseThrow(()->new RuntimeException("Course not found with id: "+courseId));
+        Course course=courseRepository.findById(courseId).orElseThrow(()->new ResourceNotFoundException("Course not found with id: "+courseId));
 
         if(course.getStudents().contains(student))
             throw new InvalidEnrollmentException("Student " + student.getName() + " is already enrolled in " + course.getCourseName());
@@ -99,7 +100,7 @@ public class StudentService {
 
     public void removeStudentFromCourse(UUID studentId,UUID courseId){
         Student student=getStudentById(studentId);
-        Course course=courseRepository.findById(courseId).orElseThrow(()->new RuntimeException("Course not found with id"+courseId));
+        Course course=courseRepository.findById(courseId).orElseThrow(()->new ResourceNotFoundException("Course not found with id"+courseId));
         student.getCourses().remove(course);
         course.getStudents().remove(student);
         studentRepository.save(student);

@@ -2,6 +2,7 @@ package com.example.student_management.service;
 
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.CourseRepository;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,7 @@ public class CourseService {
     }
 
     public Course getCourseById(UUID id){
-        return courseRepository.findById(id).orElseThrow(()->new RuntimeException("Course not found with id: "+id));
+        return courseRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Course not found with id: "+id));
     }
 
     public Course createCourse(Course course){
@@ -30,7 +31,7 @@ public class CourseService {
     }
 
     public void deleteCourse(UUID id){
-        Course course = courseRepository.findById(id).orElseThrow(()->new RuntimeException("Course not found with id: " + id));
+        Course course = courseRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Course not found with id: " + id));
 
         for(Student student:course.getStudents()){
             student.getCourses().remove(course);
