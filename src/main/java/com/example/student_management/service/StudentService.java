@@ -2,6 +2,9 @@ package com.example.student_management.service;
 
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.exceptions.BookAlreadyAssignedException;
+import com.example.student_management.exceptions.DuplicateEmailException;
+import com.example.student_management.exceptions.InvalidEnrollmentException;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
 import com.example.student_management.repository.StudentRepository;
@@ -31,6 +34,8 @@ public class StudentService {
     }
 
     public Student  createStudent(Student student){
+        if(studentRepository.findByEmail(student.getEmail()).isPresent())
+            throw new DuplicateEmailException("A student with email '" + student.getEmail() + "' already exists.");
         return studentRepository.save(student);
     }
 
@@ -53,6 +58,8 @@ public class StudentService {
         Student student = getStudentById(studentId);
         Book book =bookRepository.findById(bookId).orElseThrow(()->new RuntimeException("Book not found with id: " + bookId));
 
+        if(book.getStudent()!=null)
+            throw new BookAlreadyAssignedException("Book is already assigned to student");
         book.setStudent(student);
         student.getBooks().add(book);
 
@@ -76,6 +83,10 @@ public class StudentService {
     public Student enrollInCourse(UUID studentId,UUID courseId){
         Student student=getStudentById(studentId);
         Course course=courseRepository.findById(courseId).orElseThrow(()->new RuntimeException("Course not found with id: "+courseId));
+
+        if(course.getStudents().contains(student))
+            throw new InvalidEnrollmentException("Student " + student.getName() + " is already enrolled in " + course.getCourseName());
+
         student.getCourses().add(course);
         course.getStudents().add(student);
         return studentRepository.save(student);
