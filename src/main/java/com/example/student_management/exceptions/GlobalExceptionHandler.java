@@ -45,4 +45,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String,String>> handleBookAlreadyAssigned(BookAlreadyAssignedException ex){
         return buildErrorResponse(ex.getMessage(),HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String,String>> handleGlobalException(Exception ex){
+        Map<String, String> error = new HashMap<>();
+
+        error.put("error", "An unexpected internal server error occurred.");
+
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
 }
