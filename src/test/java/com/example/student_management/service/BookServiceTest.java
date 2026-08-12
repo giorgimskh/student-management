@@ -4,6 +4,9 @@ import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
+import com.example.student_management.repository.CourseRepository;
+import com.example.student_management.repository.StudentRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -26,6 +29,12 @@ public class BookServiceTest {
     private BookRepository bookRepository;
 
     private BookService bookService;
+
+    @BeforeEach
+    void setUp() {
+        bookService = new BookService(bookRepository);
+    }
+
     @Test
     public void deleteBook_removesBookFromStudent_whenBookHasOwner(){
        UUID bookId=UUID.randomUUID();
@@ -46,7 +55,7 @@ public class BookServiceTest {
        when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
 
        bookService.deleteBook(bookId);
-       assertThat(student.getBooks()).contains(book);
+       assertThat(student.getBooks()).doesNotContain(book);
        verify(bookRepository).delete(book);
     }
 
