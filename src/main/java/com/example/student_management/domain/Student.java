@@ -16,6 +16,7 @@ import java.util.*;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode
+@Builder
 public class Student {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -32,6 +33,7 @@ public class Student {
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @Builder.Default
     private List<Book> books = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
