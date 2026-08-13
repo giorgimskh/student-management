@@ -30,5 +30,6 @@ public class Course {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @JsonIgnore
+    @Builder.Default
     private Set<Student> students=new HashSet<>();
 }

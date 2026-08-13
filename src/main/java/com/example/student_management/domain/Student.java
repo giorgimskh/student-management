@@ -42,5 +42,6 @@ public class Student {
             inverseJoinColumns = @JoinColumn(name = "course_id"))
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @Builder.Default
     private Set<Course> courses = new HashSet<>();
 }

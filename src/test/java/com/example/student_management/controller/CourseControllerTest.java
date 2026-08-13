@@ -5,13 +5,13 @@ import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.service.CourseService;
-import org.junit.jupiter.api.MediaType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 import java.util.Set;
@@ -69,7 +69,7 @@ public class CourseControllerTest {
                 """;
 
         mockMvc.perform(post("/api/courses")
-                        .contentType(String.valueOf(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidPayload))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.courseName").value("Course name is required"));
@@ -84,7 +84,7 @@ public class CourseControllerTest {
                 """;
 
         mockMvc.perform(post("/api/courses")
-                        .contentType(String.valueOf(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidPayload))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("Course code is required"));
@@ -110,7 +110,7 @@ public class CourseControllerTest {
         // Note: unlike StudentController/BookController, CourseController
         // returns 201 Created (HttpStatus.CREATED) on success, not 200.
         mockMvc.perform(post("/api/courses")
-                        .contentType(String.valueOf(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(saved.getId().toString()))

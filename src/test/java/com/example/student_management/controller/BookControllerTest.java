@@ -4,13 +4,13 @@ import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.service.BookService;
-import org.junit.jupiter.api.MediaType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 import java.util.UUID;
@@ -65,7 +65,7 @@ public class BookControllerTest {
                 """;
 
         mockMvc.perform(post("/api/books")
-                        .contentType(String.valueOf(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidPayload))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.isbn").value("ISBN must be 10 or 13 digits"));
@@ -80,7 +80,7 @@ public class BookControllerTest {
                 """.formatted(VALID_ISBN);
 
         mockMvc.perform(post("/api/books")
-                        .contentType(String.valueOf(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidPayload))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").exists());
@@ -104,7 +104,7 @@ public class BookControllerTest {
         when(bookService.createBook(any(Book.class))).thenReturn(saved);
 
         mockMvc.perform(post("/api/books")
-                        .contentType(String.valueOf(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(saved.getId().toString()))
