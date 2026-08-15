@@ -18,12 +18,9 @@ public class SimpleApiKeyFilter implements Filter {
         HttpServletRequest httpServletRequest=(HttpServletRequest) request;
         HttpServletResponse httpServletResponse=(HttpServletResponse) response;
 
-        log.info("[FILTER] Incoming Request: {} {}",httpServletRequest.getMethod(),httpServletRequest.getRequestURI());
-
         String requestURI=httpServletRequest.getRequestURI();
         if(requestURI!=null && !requestURI.startsWith("/api")){
             chain.doFilter(request,response);
-            log.info("[FILTER] Completed Request: {} {} status={}",httpServletRequest.getMethod(),httpServletRequest.getRequestURI(),httpServletResponse.getStatus());
             return;
         }
 
@@ -36,7 +33,5 @@ public class SimpleApiKeyFilter implements Filter {
             httpServletResponse.setContentType("application/json");
             httpServletResponse.getWriter().write("{\"error\": \"Unauthorized: Missing or invalid API key\"}");
         }
-
-        log.info("[FILTER] Completed Request: {} {} status={}",httpServletRequest.getMethod(),httpServletRequest.getRequestURI(),httpServletResponse.getStatus());
     }
 }

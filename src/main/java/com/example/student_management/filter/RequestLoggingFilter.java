@@ -19,15 +19,17 @@ public class RequestLoggingFilter  implements Filter  {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
         long startTime=System.currentTimeMillis();
-
-        log.info("[FILTER] Incoming Request: {} {}",httpServletRequest.getMethod(),httpServletRequest.getRequestURI());
+        String requestId = (String) httpServletRequest.getAttribute(CorrelationIdFilter.REQUEST_ID_ATTRIBUTE);
+        log.info("[FILTER] [{}] Incoming Request: {} {}", requestId, httpServletRequest.getMethod(),httpServletRequest.getRequestURI());
 
         try {
             chain.doFilter(request,response);
         } finally {
             long duration = System.currentTimeMillis()-startTime;
 
-            log.info("[FILTER] Completed Request: {} {} status={}, duration={} ",httpServletRequest.getMethod(),httpServletRequest.getRequestURI(),httpServletResponse.getStatus(),duration);
+            log.info("[FILTER] [{}] Completed Request: {} {} status={}, duration={} ",
+                    requestId,httpServletRequest.getMethod(),httpServletRequest.getRequestURI(),
+                    httpServletResponse.getStatus(),duration);
         }
     }
 }

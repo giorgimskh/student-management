@@ -18,10 +18,8 @@ public class CorrelationIdFilter implements Filter {
         HttpServletRequest httpServletRequest=(HttpServletRequest) request;
         HttpServletResponse httpServletResponse=(HttpServletResponse) response;
 
-        log.info("[FILTER] Incoming Request: {} {}",httpServletRequest.getMethod(),httpServletRequest.getRequestURI());
-
         String requestId = httpServletRequest.getHeader(REQUEST_ID_HEADER);
-        if(requestId==null || requestId.trim().isBlank()){
+        if(requestId==null || requestId.isBlank()){
             requestId= UUID.randomUUID().toString();
         }
 
@@ -31,10 +29,7 @@ public class CorrelationIdFilter implements Filter {
         try {
             chain.doFilter(request,response);
         }finally {
-            log.info("[FILTER] Completed Request: {} {} status={}",
-                    httpServletRequest.getMethod(),
-                    httpServletRequest.getRequestURI(),
-                    httpServletResponse.getStatus());
+
         }
     }
 }
