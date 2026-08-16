@@ -2,7 +2,9 @@ package com.example.student_management.config;
 
 import com.example.student_management.filter.CorrelationIdFilter;
 import com.example.student_management.filter.RequestLoggingFilter;
+import com.example.student_management.filter.ResponseTimeFilter;
 import com.example.student_management.filter.SimpleApiKeyFilter;
+import org.apache.coyote.Response;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,6 +44,15 @@ public class AppConfig {
         registrationBean.setFilter(new SimpleApiKeyFilter());
 
         registrationBean.setOrder(2);
+        return registrationBean;
+    }
+
+    @Bean
+    public FilterRegistrationBean<ResponseTimeFilter> responseTimeFilterFilterRegistrationBean(){
+        FilterRegistrationBean<ResponseTimeFilter> registrationBean = new FilterRegistrationBean<ResponseTimeFilter>();
+        registrationBean.setFilter(new ResponseTimeFilter());
+
+        registrationBean.setOrder(3);
         return registrationBean;
     }
 }

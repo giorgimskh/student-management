@@ -26,10 +26,6 @@ public class CorrelationIdFilter implements Filter {
         httpServletRequest.setAttribute(REQUEST_ID_ATTRIBUTE,requestId);
         httpServletResponse.setHeader(REQUEST_ID_HEADER,requestId);
 
-        try {
-            chain.doFilter(request,response);
-        }finally {
-
-        }
+        chain.doFilter(request,response);
     }
 }
