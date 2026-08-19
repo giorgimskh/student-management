@@ -13,6 +13,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -44,6 +46,10 @@ public class StudentService {
 
     public List<Student> getAllStudents(){
         return studentRepository.findAll();
+    }
+
+    public Page<Student> getAllStudents(Pageable pageable){
+        return studentRepository.findAll(pageable);
     }
 
     public Student  createStudent(Student student){
@@ -88,6 +94,11 @@ public class StudentService {
         return student.getBooks();
     }
 
+    public Page<Book> getBooksByStudent(UUID studentId,Pageable pageable){
+        Student student = getStudentById(studentId);
+        return bookRepository.findByStudentId(studentId,pageable);
+    }
+
     public void removeBookFromStudent(UUID studentId,UUID bookId){
         Book book = bookRepository.findById(bookId).orElseThrow(()->new ResourceNotFoundException("Book with such id not found"));
         book.setStudent(null);
@@ -118,5 +129,9 @@ public class StudentService {
         student.getCourses().remove(course);
         course.getStudents().remove(student);
         studentRepository.save(student);
+    }
+
+    public Page<Student> searchStudents(String name,Pageable pageable){
+        return studentRepository.findByNameContainingIgnoreCase(name,pageable);
     }
 }

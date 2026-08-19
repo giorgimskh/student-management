@@ -1,8 +1,12 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
 import com.example.student_management.service.BookService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.student_management.domain.Book;
@@ -22,6 +26,11 @@ public class BookController {
     @GetMapping
     public List<Book> getAllBooks(){
         return bookService.getAllBooks();
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<Book>> getAllCourses(@PageableDefault(size = 10,sort = "title") Pageable pageable){
+        return ResponseEntity.ok(bookService.getAllBooks(pageable));
     }
 
     @GetMapping("/{id}")

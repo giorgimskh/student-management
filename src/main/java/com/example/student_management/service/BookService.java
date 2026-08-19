@@ -4,6 +4,8 @@ import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +21,10 @@ public class BookService {
 
     public List<Book> getAllBooks(){
         return bookRepository.findAll();
+    }
+
+    public Page<Book> getAllBooks(Pageable pageable){
+        return bookRepository.findAll(pageable);
     }
 
     public Book getBookById(UUID id){

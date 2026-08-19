@@ -4,6 +4,8 @@ import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.CourseRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +22,10 @@ public class CourseService {
 
     public List<Course> getAllCourses(){
         return courseRepository.findAll();
+    }
+
+    public Page<Course> getAllCourses(Pageable pageable){
+        return courseRepository.findAll(pageable);
     }
 
     public Course getCourseById(UUID id){
