@@ -7,6 +7,8 @@ import com.example.student_management.service.BookService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -36,12 +38,12 @@ public class BookControllerTest {
     void getAllBooks_returnsOkAndList() throws Exception{
         Book book = Book.builder().id(UUID.randomUUID()).title("Clean code").isbn(VALID_ISBN).build();
 
-        when(bookService.getAllBooks()).thenReturn(List.of(book));
+        when(bookService.getAllBooks(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(book)));
 
         mockMvc.perform(get("/api/books"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].title").value("Clean code"))
-                .andExpect(jsonPath("$[0].isbn").value(VALID_ISBN));
+                .andExpect(jsonPath("$.content[0].title").value("Clean code"))   // note: content[0], not [0]
+                .andExpect(jsonPath("$.content[0].isbn").value(VALID_ISBN));
     }
 
 

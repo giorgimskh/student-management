@@ -24,12 +24,7 @@ public class BookController {
     }
 
     @GetMapping
-    public List<Book> getAllBooks(){
-        return bookService.getAllBooks();
-    }
-
-    @GetMapping
-    public ResponseEntity<Page<Book>> getAllCourses(@PageableDefault(size = 10,sort = "title") Pageable pageable){
+    public ResponseEntity<Page<Book>> getAllBooks(@PageableDefault(size = 10,sort = "title") Pageable pageable){
         return ResponseEntity.ok(bookService.getAllBooks(pageable));
     }
 

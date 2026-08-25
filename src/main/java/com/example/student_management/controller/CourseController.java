@@ -26,11 +26,6 @@ public class CourseController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Course>> getAllCourses() {
-        return ResponseEntity.ok(courseService.getAllCourses());
-    }
-
-    @GetMapping
     public ResponseEntity<Page<Course>> getAllCourses(@PageableDefault(size = 10,sort = "courseName") Pageable pageable){
         return ResponseEntity.ok(courseService.getAllCourses(pageable));
     }

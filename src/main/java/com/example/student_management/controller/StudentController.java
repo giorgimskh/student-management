@@ -25,11 +25,6 @@ public class StudentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Student>> getAllStudents(){
-        return ResponseEntity.ok(studentService.getAllStudents());
-    }
-
-    @GetMapping
     public ResponseEntity<Page<Student>> getAllStudents(@PageableDefault(size = 10,sort = "name")Pageable pageable){
         return ResponseEntity.ok(studentService.getAllStudents(pageable));
     }
@@ -63,12 +58,7 @@ public class StudentController {
     }
 
     @GetMapping("/{studentId}/books")
-    public ResponseEntity<List<Book>> getBookByStudent(@PathVariable UUID studentId){
-        return ResponseEntity.ok(studentService.getBooksByStudent(studentId));
-    }
-
-    @GetMapping("/{studentId}/books")
-    public ResponseEntity<Page<Book>> getBooksByStudent(@RequestParam UUID studentId,Pageable pageable){
+    public ResponseEntity<Page<Book>> getBooksByStudent(@PathVariable UUID studentId,Pageable pageable){
         return ResponseEntity.ok(studentService.getBooksByStudent(studentId,pageable));
     }
 

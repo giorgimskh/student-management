@@ -8,5 +8,5 @@ import com.example.student_management.domain.Book;
 import java.util.UUID;
 
 public interface BookRepository extends JpaRepository<Book, UUID> {
-    Page<Book> findByStudentId(UUID stundetId, Pageable pageable);
+    Page<Book> findByStudentId(UUID studentId, Pageable pageable);
 }

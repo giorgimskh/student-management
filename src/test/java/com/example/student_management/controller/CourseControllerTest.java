@@ -8,6 +8,8 @@ import com.example.student_management.service.CourseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -42,12 +44,12 @@ public class CourseControllerTest {
                 .code("CS201")
                 .build();
 
-        when(courseService.getAllCourses()).thenReturn(List.of(course));
+        when(courseService.getAllCourses(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(course)));
 
         mockMvc.perform(get("/api/courses"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].courseName").value("Databases"))
-                .andExpect(jsonPath("$[0].code").value("CS201"));
+                .andExpect(jsonPath("$.content[0].courseName").value("Databases"))
+                .andExpect(jsonPath("$.content[0].code").value("CS201"));
     }
 
     @Test

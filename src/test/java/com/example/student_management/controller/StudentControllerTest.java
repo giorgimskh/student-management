@@ -7,6 +7,8 @@ import com.example.student_management.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,12 +43,12 @@ public class StudentControllerTest {
                 .email("nino@example.com")
                 .build();
 
-        when(studentService.getAllStudents()).thenReturn(List.of(s));
+        when(studentService.getAllStudents(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(s)));
 
         mockMvc.perform(get("/api/students"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Nino Kapanadze"))
-                .andExpect(jsonPath("$[0].email").value("nino@example.com"));
+                .andExpect(jsonPath("$.content[0].name").value("Nino Kapanadze"))
+                .andExpect(jsonPath("$.content[0].email").value("nino@example.com"));
     }
 
     @Test
