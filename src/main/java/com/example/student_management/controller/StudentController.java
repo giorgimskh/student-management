@@ -1,6 +1,7 @@
 package com.example.student_management.controller;
 
 import com.example.student_management.domain.Course;
+import com.example.student_management.dto.PagedResponse;
 import com.example.student_management.service.StudentService;
 import com.example.student_management.domain.Student;
 import jakarta.validation.Valid;
@@ -10,7 +11,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import com.example.student_management.domain.Book;
@@ -25,15 +25,15 @@ public class StudentController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<Student>> getAllStudents(@PageableDefault(size = 10,sort = "name")Pageable pageable){
-        return ResponseEntity.ok(studentService.getAllStudents(pageable));
+    public ResponseEntity<PagedResponse<Student>> getAllStudents(@PageableDefault(size = 10,sort = "name")Pageable pageable){
+        return ResponseEntity.ok(PagedResponse.from(studentService.getAllStudents(pageable)));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Page<Student>> searchStudents(
+    public ResponseEntity<PagedResponse<Student>> searchStudents(
             @RequestParam String name,
             @PageableDefault(size = 10) Pageable pageable){
-        return ResponseEntity.ok(studentService.searchStudents(name,pageable));
+        return ResponseEntity.ok(PagedResponse.from(studentService.searchStudents(name,pageable)));
     }
 
     @GetMapping("/{id}")
@@ -58,8 +58,8 @@ public class StudentController {
     }
 
     @GetMapping("/{studentId}/books")
-    public ResponseEntity<Page<Book>> getBooksByStudent(@PathVariable UUID studentId,Pageable pageable){
-        return ResponseEntity.ok(studentService.getBooksByStudent(studentId,pageable));
+    public ResponseEntity<PagedResponse<Book>> getBooksByStudent(@PathVariable UUID studentId,Pageable pageable){
+        return ResponseEntity.ok(PagedResponse.from(studentService.getBooksByStudent(studentId,pageable)));
     }
 
     @PostMapping

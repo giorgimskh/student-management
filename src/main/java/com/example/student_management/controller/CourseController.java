@@ -2,6 +2,7 @@ package com.example.student_management.controller;
 
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.dto.PagedResponse;
 import com.example.student_management.service.CourseService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -26,8 +27,8 @@ public class CourseController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<Course>> getAllCourses(@PageableDefault(size = 10,sort = "courseName") Pageable pageable){
-        return ResponseEntity.ok(courseService.getAllCourses(pageable));
+    public ResponseEntity<PagedResponse<Course>> getAllCourses(@PageableDefault(size = 10,sort = "courseName") Pageable pageable){
+        return ResponseEntity.ok(PagedResponse.from(courseService.getAllCourses(pageable)));
     }
 
     @GetMapping("/{id}")

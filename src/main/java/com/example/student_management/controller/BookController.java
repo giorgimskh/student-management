@@ -2,6 +2,7 @@ package com.example.student_management.controller;
 
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.dto.PagedResponse;
 import com.example.student_management.service.BookService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -24,8 +25,8 @@ public class BookController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<Book>> getAllBooks(@PageableDefault(size = 10,sort = "title") Pageable pageable){
-        return ResponseEntity.ok(bookService.getAllBooks(pageable));
+    public ResponseEntity<PagedResponse<Book>> getAllBooks(@PageableDefault(size = 10,sort = "title") Pageable pageable){
+        return ResponseEntity.ok(PagedResponse.from(bookService.getAllBooks(pageable)));
     }
 
     @GetMapping("/{id}")
