@@ -8,6 +8,7 @@ import com.example.student_management.exceptions.InvalidEnrollmentException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
+import com.example.student_management.repository.StudentPhotoRepository;
 import com.example.student_management.repository.StudentRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
@@ -31,12 +32,14 @@ public class StudentService {
     private final BookRepository bookRepository;
     private final CourseRepository courseRepository;
     private final Clock clock;
+    private final StudentPhotoService studentPhotoService;
 
-    public StudentService(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository,Clock clock) {
+    public StudentService(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository, Clock clock, StudentPhotoService studentPhotoService) {
         this.studentRepository = studentRepository;
         this.bookRepository = bookRepository;
         this.courseRepository = courseRepository;
         this.clock=clock;
+        this.studentPhotoService = studentPhotoService;
     }
 
     @PostConstruct
@@ -73,6 +76,7 @@ public class StudentService {
 
     public void deleteStudent(UUID id){
         studentRepository.deleteById(id);
+        studentPhotoService.deletePhoto(id);
     }
 
     public Student assignBookToStudent(UUID studentId,UUID bookId){
