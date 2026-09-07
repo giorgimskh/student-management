@@ -6,7 +6,9 @@ import com.example.student_management.dto.PhotoResponseDto;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.StudentPhotoRepository;
 import com.example.student_management.repository.StudentRepository;
+import jakarta.annotation.Resource;
 import jakarta.transaction.Transactional;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -52,14 +54,21 @@ public class StudentPhotoService {
         return studentPhotoRepository.save(photo);
     }
 
-    public PhotoResponseDto getPhoto(UUID studentId){
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+    public PhotoResponseDto getPhoto(UUID studentId) {
+        if (!studentRepository.existsById(studentId)) {
+            throw new ResourceNotFoundException("Student not found with id: " + studentId);
+        }
 
-        StudentPhoto studentPhoto=studentPhotoRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Photo not found with id : " + studentId));
+        StudentPhoto studentPhoto = studentPhotoRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Photo not found for student id: " + studentId));
 
-        return studentPhoto;
+        ByteArrayResource resource = new ByteArrayResource(studentPhoto.getData());
+
+        return new PhotoResponseDto(
+                (Resource) resource,
+                studentPhoto.getContentType(),
+                studentPhoto.getOriginalFilename()
+        );
     }
 
     public void deletePhoto(UUID studentId){
