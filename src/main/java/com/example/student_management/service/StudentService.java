@@ -74,9 +74,10 @@ public class StudentService {
         return studentRepository.save(student);
     }
 
+    @Transactional
     public void deleteStudent(UUID id){
         studentRepository.deleteById(id);
-        studentPhotoService.deletePhoto(id);
+        studentPhotoService.deletePhotoIfExists(id);
     }
 
     public Student assignBookToStudent(UUID studentId,UUID bookId){

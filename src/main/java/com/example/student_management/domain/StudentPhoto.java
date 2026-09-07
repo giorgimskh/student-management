@@ -3,9 +3,7 @@ package com.example.student_management.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 @Entity
@@ -16,22 +14,23 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder
 public class StudentPhoto {
+
     @Id
-    @GeneratedValue(strategy=GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id",unique = true,nullable = false)
+    @JoinColumn(name = "student_id", unique = true, nullable = false)
     private Student student;
 
     @Lob
-    @Column(columnDefinition = "bytea",nullable = false)
+    @Column(columnDefinition = "bytea", nullable = false)
     private byte[] data;
 
     @Column(nullable = false)
     private String contentType;
 
-    private String OriginalFilename;
+    private String originalFilename;
 
     @Column(nullable = false)
     private long sizeBytes;

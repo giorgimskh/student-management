@@ -44,4 +44,9 @@ public class Student {
     @EqualsAndHashCode.Exclude
     @Builder.Default
     private Set<Course> courses = new HashSet<>();
+
+    @OneToOne(mappedBy = "student",cascade = CascadeType.ALL,orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private StudentPhoto studentPhoto;
 }
