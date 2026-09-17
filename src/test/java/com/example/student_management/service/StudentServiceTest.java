@@ -44,6 +44,9 @@ public class StudentServiceTest {
     @Mock
     private CourseRepository courseRepository;
 
+    @Mock
+    private StudentPhotoService studentPhotoService;
+
     private Student student;
     private UUID studentId;
 
@@ -60,7 +63,7 @@ public class StudentServiceTest {
         // Mockito mock here (it's a fixed real instance) — @InjectMocks only
         // wires fields annotated with @Mock/@Spy. This pattern (manual wiring
         // for a mix of mocks + real config values) is very common in real code.
-        studentService = new StudentService(studentRepository, bookRepository, courseRepository, fixedClock);
+        studentService = new StudentService(studentRepository, bookRepository, courseRepository, fixedClock, studentPhotoService);
 
         studentId = UUID.randomUUID();
         student = Student.builder()
