@@ -21,56 +21,48 @@ A Spring Boot REST API for managing students, their book loans, course enrollmen
 
 ## Architecture
 
-See [docs/uml.md](docs/uml.md) for UML class diagrams of the domain model (entities, fields, JPA relationship cardinalities) and the layered architecture (controller → service → repository → entity dependencies).
+Full diagrams with field-level detail and method signatures are in [docs/uml.md](docs/uml.md); the domain model is reproduced here.
 
-## Getting Started
+```mermaid
+classDiagram
+    class Student {
+        -UUID id
+        -String name
+        -String email
+        -Instant createdAt
+        -List~Book~ books
+        -Set~Course~ courses
+        -StudentPhoto studentPhoto
+    }
 
-### Prerequisites
+    class Book {
+        -UUID id
+        -String title
+        -String isbn
+        -Student student
+    }
 
-- Java 25
-- Maven
-- PostgreSQL running locally
+    class Course {
+        -UUID id
+        -String courseName
+        -String code
+        -Set~Student~ students
+    }
 
-### Configuration
+    class StudentPhoto {
+        -UUID id
+        -Student student
+        -byte[] data
+        -String contentType
+        -String originalFilename
+        -long sizeBytes
+        -Instant uploadedAt
+    }
 
-Set your database connection in `src/main/resources/application.properties`:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/<your-db>
-spring.datasource.username=<your-username>
-spring.datasource.password=<your-password>
+    Student "1" *-- "0..*" Book : books\n(cascade ALL, orphanRemoval)
+    Student "1" *-- "0..1" StudentPhoto : studentPhoto\n(cascade ALL, orphanRemoval)
+    Student "0..*" -- "0..*" Course : courses\n(join table student_courses)
 ```
-
-The schema is created/updated automatically on startup (`spring.jpa.hibernate.ddl-auto=update`).
-
-### Run
-
-```bash
-./mvnw spring-boot:run
-```
-
-The API is served at `http://localhost:8080`. Swagger UI is available at `http://localhost:8080/swagger-ui.html`.
-
-### Authentication
-
-All `/api/**` requests must include an `X-Api-Key` header. See `SimpleApiKeyFilter` for the configured key.
-
-### Tests
-
-```bash
-./mvnw test
-```
-
-## API Overview
-
-| Resource | Endpoints |
-|---|---|
-| Students | `GET/POST /api/students`, `GET/PUT/DELETE /api/students/{id}`, `GET /api/students/search?name=` |
-| Books | `GET/POST /api/books`, `GET/DELETE /api/books/{id}`, `GET /api/books/{id}/owner` |
-| Courses | `GET/POST /api/courses`, `GET/DELETE /api/courses/{id}`, `GET /api/courses/{id}/students` |
-| Book assignment | `POST/DELETE /api/students/{studentId}/books/{bookId}`, `GET /api/students/{studentId}/books` |
-| Enrollment | `POST/DELETE /api/students/{studentId}/courses/{courseId}`, `GET /api/students/{studentId}/courses` |
-| Student photo | `POST/GET/DELETE /api/students/{studentId}/photo` |
 
 ## Known Limitations
 
