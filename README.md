@@ -19,6 +19,22 @@ A Spring Boot REST API for managing students, their book loans, course enrollmen
 - JUnit 5 / Mockito, H2 (test scope)
 - Lombok
 
+## Configuration
+
+Set your database connection in `src/main/resources/application.properties`:
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/<your-db>
+spring.datasource.username=<your-username>
+spring.datasource.password=<your-password>
+```
+
+The schema is created/updated automatically on startup (`spring.jpa.hibernate.ddl-auto=update`).
+
+## Authentication
+
+All `/api/**` requests must include an `X-Api-Key` header. See `SimpleApiKeyFilter` for the configured key.
+
 ## Architecture
 
 Full diagrams with field-level detail and method signatures are in [docs/uml.md](docs/uml.md); the domain model is reproduced here.
