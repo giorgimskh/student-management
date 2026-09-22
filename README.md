@@ -19,6 +19,10 @@ A Spring Boot REST API for managing students, their book loans, course enrollmen
 - JUnit 5 / Mockito, H2 (test scope)
 - Lombok
 
+## Architecture
+
+See [docs/uml.md](docs/uml.md) for UML class diagrams of the domain model (entities, fields, JPA relationship cardinalities) and the layered architecture (controller → service → repository → entity dependencies).
+
 ## Getting Started
 
 ### Prerequisites
