@@ -1,8 +1,6 @@
 package com.example.student_management.domain;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.Instant;
@@ -22,11 +20,8 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @NotBlank(message = "Student name is required")
     private String name;
 
-    @Email(message = "Email is required")
-    @NotBlank(message = "Email cant be blank")
     private String email;
 
     private Instant createdAt;

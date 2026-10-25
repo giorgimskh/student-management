@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -43,6 +44,10 @@ public class StudentService {
     @PostConstruct
     public void init() {
         log.info("StudentService initialized successfully and ready to process requests.");
+    }
+
+    public List<Student> getAllStudents() {
+        return studentRepository.findAll();
     }
 
     public Page<Student> getAllStudents(Pageable pageable) {
@@ -88,6 +93,10 @@ public class StudentService {
         student.getBooks().add(book);
         bookRepository.save(book);
         return student;
+    }
+
+    public List<Book> getBooksByStudent(UUID studentId) {
+        return getStudentById(studentId).getBooks();
     }
 
     public Page<Book> getBooksByStudent(UUID studentId, Pageable pageable) {
