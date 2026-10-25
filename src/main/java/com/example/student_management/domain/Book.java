@@ -8,7 +8,6 @@ import lombok.*;
 
 import java.util.UUID;
 
-
 @Entity
 @Data
 @NoArgsConstructor
@@ -29,12 +28,7 @@ public class Book {
     private String isbn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "student_id",         // Customizes the foreign key column name
-            referencedColumnName = "id", // Points to the primary key of the parent
-            nullable = true,
-            unique = false
-    )
+    @JoinColumn(name = "student_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @JsonIgnore

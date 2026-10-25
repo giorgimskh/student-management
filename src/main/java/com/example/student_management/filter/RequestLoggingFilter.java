@@ -1,16 +1,14 @@
 package com.example.student_management.filter;
 
-
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
-public class RequestLoggingFilter  implements Filter  {
-    //For writing Log Messages in console
-    //When messages are printed, they will be tagged with this class name, making it easy to see where the logs are coming from.
+public class RequestLoggingFilter implements Filter {
     private static final Logger log= LoggerFactory.getLogger(RequestLoggingFilter.class);
 
     @Override

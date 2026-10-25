@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -20,26 +19,23 @@ public class CourseService {
         this.courseRepository = courseRepository;
     }
 
-    public List<Course> getAllCourses(){
-        return courseRepository.findAll();
-    }
-
-    public Page<Course> getAllCourses(Pageable pageable){
+    public Page<Course> getAllCourses(Pageable pageable) {
         return courseRepository.findAll(pageable);
     }
 
-    public Course getCourseById(UUID id){
-        return courseRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Course not found with id: "+id));
+    public Course getCourseById(UUID id) {
+        return courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
     }
 
-    public Course createCourse(Course course){
+    public Course createCourse(Course course) {
         return courseRepository.save(course);
     }
 
-    public void deleteCourse(UUID id){
-        Course course = courseRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Course not found with id: " + id));
+    public void deleteCourse(UUID id) {
+        Course course = getCourseById(id);
 
-        for(Student student:course.getStudents()){
+        for (Student student : course.getStudents()) {
             student.getCourses().remove(course);
         }
 
@@ -47,7 +43,7 @@ public class CourseService {
         courseRepository.delete(course);
     }
 
-    public Set<Student> getStudentsInCourse(UUID courseId){
+    public Set<Student> getStudentsInCourse(UUID courseId) {
         return getCourseById(courseId).getStudents();
     }
 }

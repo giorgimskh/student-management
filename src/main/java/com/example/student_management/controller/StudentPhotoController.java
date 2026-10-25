@@ -1,14 +1,12 @@
 package com.example.student_management.controller;
 
-import com.example.student_management.domain.StudentPhoto;
 import com.example.student_management.dto.PhotoResponseDto;
 import com.example.student_management.service.StudentPhotoService;
-import jakarta.annotation.Resource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,8 +22,8 @@ public class StudentPhotoController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<StudentPhoto> uploadPhoto(@PathVariable UUID studentId, @RequestParam("file") MultipartFile file){
-        studentPhotoService.storePhoto(studentId,file);
+    public ResponseEntity<Void> uploadPhoto(@PathVariable UUID studentId, @RequestParam("file") MultipartFile file){
+        studentPhotoService.storePhoto(studentId, file);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -40,8 +38,8 @@ public class StudentPhotoController {
         PhotoResponseDto photoDto = studentPhotoService.getPhoto(studentId);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(photoDto.getContentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + photoDto.getFilename() + "\"")
-                .body(photoDto.getResource());
+                .contentType(MediaType.parseMediaType(photoDto.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + photoDto.filename() + "\"")
+                .body(photoDto.resource());
     }
 }

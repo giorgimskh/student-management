@@ -6,7 +6,6 @@ import com.example.student_management.dto.PhotoResponseDto;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.StudentPhotoRepository;
 import com.example.student_management.repository.StudentRepository;
-import jakarta.annotation.Resource;
 import jakarta.transaction.Transactional;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
@@ -30,9 +29,9 @@ public class StudentPhotoService {
         this.clock = clock;
     }
 
-    public StudentPhoto storePhoto(UUID studentId, MultipartFile file){
+    public StudentPhoto storePhoto(UUID studentId, MultipartFile file) {
         Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+                .orElseThrow(() -> studentNotFound(studentId));
 
         StudentPhoto photo = studentPhotoRepository.findByStudentId(studentId)
                 .orElseGet(() -> {
@@ -48,42 +47,41 @@ public class StudentPhotoService {
             photo.setSizeBytes(file.getSize());
             photo.setUploadedAt(Instant.now(clock));
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload Photo for studentId" + studentId,e);
+            throw new RuntimeException("Failed to upload photo for student id: " + studentId, e);
         }
 
         return studentPhotoRepository.save(photo);
     }
 
     public PhotoResponseDto getPhoto(UUID studentId) {
-        if (!studentRepository.existsById(studentId)) {
-            throw new ResourceNotFoundException("Student not found with id: " + studentId);
-        }
-
-        StudentPhoto studentPhoto = studentPhotoRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Photo not found for student id: " + studentId));
-
-        ByteArrayResource resource = new ByteArrayResource(studentPhoto.getData());
+        StudentPhoto studentPhoto = findExistingPhoto(studentId);
 
         return new PhotoResponseDto(
-                (Resource) resource,
+                new ByteArrayResource(studentPhoto.getData()),
                 studentPhoto.getContentType(),
                 studentPhoto.getOriginalFilename()
         );
     }
 
-    public void deletePhoto(UUID studentId){
-       if(!studentRepository.existsById(studentId)){
-           throw new ResourceNotFoundException("Student does not exist with id : "+studentId);
-       }
-
-        StudentPhoto studentPhoto=studentPhotoRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Student with id "+studentId + " does not have Photo"));
-
-        studentPhotoRepository.delete(studentPhoto);
+    public void deletePhoto(UUID studentId) {
+        studentPhotoRepository.delete(findExistingPhoto(studentId));
     }
 
     public void deletePhotoIfExists(UUID studentId) {
         studentPhotoRepository.findByStudentId(studentId)
                 .ifPresent(studentPhotoRepository::delete);
+    }
+
+    private StudentPhoto findExistingPhoto(UUID studentId) {
+        if (!studentRepository.existsById(studentId)) {
+            throw studentNotFound(studentId);
+        }
+
+        return studentPhotoRepository.findByStudentId(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Photo not found for student id: " + studentId));
+    }
+
+    private static ResourceNotFoundException studentNotFound(UUID studentId) {
+        return new ResourceNotFoundException("Student not found with id: " + studentId);
     }
 }

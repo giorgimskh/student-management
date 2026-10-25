@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -19,37 +18,34 @@ public class BookService {
         this.bookRepository = bookRepository;
     }
 
-    public List<Book> getAllBooks(){
-        return bookRepository.findAll();
-    }
-
-    public Page<Book> getAllBooks(Pageable pageable){
+    public Page<Book> getAllBooks(Pageable pageable) {
         return bookRepository.findAll(pageable);
     }
 
-    public Book getBookById(UUID id){
-        return bookRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Book not found with id: "+id));
+    public Book getBookById(UUID id) {
+        return bookRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
     }
 
-    public Book createBook(Book book){
+    public Book createBook(Book book) {
         return bookRepository.save(book);
     }
 
-    public void deleteBook(UUID id){
+    public void deleteBook(UUID id) {
         Book book = getBookById(id);
 
-        if(book.getStudent()!=null){
+        if (book.getStudent() != null) {
             book.getStudent().getBooks().remove(book);
         }
 
         bookRepository.delete(book);
     }
 
-    public Student getBookOwner(UUID bookId){
-        Book book = bookRepository.findById(bookId).orElseThrow(()->new ResourceNotFoundException("No book found with id: " + bookId));
+    public Student getBookOwner(UUID bookId) {
+        Book book = getBookById(bookId);
 
-        if(book.getStudent()==null){
-            throw new ResourceNotFoundException("Book with id: "+bookId+ " has no owner");
+        if (book.getStudent() == null) {
+            throw new ResourceNotFoundException("Book with id: " + bookId + " has no owner");
         }
         return book.getStudent();
     }

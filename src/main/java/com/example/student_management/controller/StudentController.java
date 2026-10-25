@@ -1,11 +1,11 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
+import com.example.student_management.domain.Student;
 import com.example.student_management.dto.PagedResponse;
 import com.example.student_management.service.StudentService;
-import com.example.student_management.domain.Student;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
 import java.util.UUID;
-import com.example.student_management.domain.Book;
 
 @RestController
 @RequestMapping("/api/students")
@@ -73,7 +72,6 @@ public class StudentController {
         return ResponseEntity.noContent().build();
     }
 
-
     @PostMapping("/{studentId}/courses/{courseId}")
     public ResponseEntity<Student> enrollStudentInCourse(@PathVariable UUID studentId, @PathVariable UUID courseId){
         return ResponseEntity.ok(studentService.enrollInCourse(studentId,courseId));
@@ -89,5 +87,4 @@ public class StudentController {
         studentService.removeStudentFromCourse(studentId,courseId);
         return ResponseEntity.noContent().build();
     }
-
 }
