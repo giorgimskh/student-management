@@ -50,6 +50,11 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("Bad Request", HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(NothingToUndoException.class)
+    public ResponseEntity<Map<String, String>> handleNothingToUndo(NothingToUndoException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(InvalidPhotoException.class)
     public ResponseEntity<Map<String, String>> handleInvalidPhoto(InvalidPhotoException ex) {
         return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);

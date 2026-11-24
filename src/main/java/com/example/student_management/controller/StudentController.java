@@ -1,5 +1,10 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.command.AssignBookCommand;
+import com.example.student_management.command.DropCourseCommand;
+import com.example.student_management.command.EnrollInCourseCommand;
+import com.example.student_management.command.RemoveBookCommand;
+import com.example.student_management.command.StudentCommandInvoker;
 import com.example.student_management.dto.BookResponse;
 import com.example.student_management.dto.CourseResponse;
 import com.example.student_management.dto.PagedResponse;
@@ -19,9 +24,11 @@ import java.util.UUID;
 @RequestMapping("/api/students")
 public class StudentController {
     private final StudentService studentService;
+    private final StudentCommandInvoker commandInvoker;
 
-    public StudentController(StudentService studentService) {
+    public StudentController(StudentService studentService, StudentCommandInvoker commandInvoker) {
         this.studentService = studentService;
+        this.commandInvoker = commandInvoker;
     }
 
     @GetMapping
@@ -59,7 +66,7 @@ public class StudentController {
 
     @PostMapping("/{studentId}/books/{bookId}")
     public ResponseEntity<StudentResponse> assignBookToStudent(@PathVariable UUID studentId, @PathVariable UUID bookId) {
-        return ResponseEntity.ok(StudentResponse.from(studentService.assignBookToStudent(studentId, bookId)));
+        return ResponseEntity.ok(StudentResponse.from(commandInvoker.execute(new AssignBookCommand(studentService, studentId, bookId))));
     }
 
     @GetMapping("/{studentId}/books")
@@ -69,13 +76,13 @@ public class StudentController {
 
     @DeleteMapping("/{studentId}/books/{bookId}")
     public ResponseEntity<Void> removeBookFromStudent(@PathVariable UUID studentId, @PathVariable UUID bookId) {
-        studentService.removeBookFromStudent(studentId, bookId);
+        commandInvoker.execute(new RemoveBookCommand(studentService, studentId, bookId));
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{studentId}/courses/{courseId}")
     public ResponseEntity<StudentResponse> enrollStudentInCourse(@PathVariable UUID studentId, @PathVariable UUID courseId) {
-        return ResponseEntity.ok(StudentResponse.from(studentService.enrollInCourse(studentId, courseId)));
+        return ResponseEntity.ok(StudentResponse.from(commandInvoker.execute(new EnrollInCourseCommand(studentService, studentId, courseId))));
     }
 
     @GetMapping("/{studentId}/courses")
@@ -85,7 +92,7 @@ public class StudentController {
 
     @DeleteMapping("/{studentId}/courses/{courseId}")
     public ResponseEntity<Void> removeStudentFromCourse(@PathVariable UUID studentId, @PathVariable UUID courseId) {
-        studentService.removeStudentFromCourse(studentId, courseId);
+        commandInvoker.execute(new DropCourseCommand(studentService, studentId, courseId));
         return ResponseEntity.noContent().build();
     }
 }

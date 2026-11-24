@@ -1,5 +1,6 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.command.StudentCommandInvoker;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.DuplicateEmailException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
@@ -7,6 +8,7 @@ import com.example.student_management.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
@@ -25,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(StudentController.class)
+@Import(StudentCommandInvoker.class)
 public class StudentControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -129,4 +132,28 @@ public class StudentControllerTest {
         verify(studentService).deleteStudent(eq(id));
     }
 
+    @Test
+    void assignBook_runsThroughCommandInvoker_andReturnsStudent() throws Exception {
+        UUID studentId = UUID.randomUUID();
+        UUID bookId = UUID.randomUUID();
+        Student s = Student.builder().id(studentId).name("Nino").email("nino@example.com").build();
+        when(studentService.assignBookToStudent(studentId, bookId)).thenReturn(s);
+
+        mockMvc.perform(post("/api/students/{studentId}/books/{bookId}", studentId, bookId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(studentId.toString()));
+
+        verify(studentService).assignBookToStudent(studentId, bookId);
+    }
+
+    @Test
+    void dropCourse_returns204_andDelegatesToService() throws Exception {
+        UUID studentId = UUID.randomUUID();
+        UUID courseId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/students/{studentId}/courses/{courseId}", studentId, courseId))
+                .andExpect(status().isNoContent());
+
+        verify(studentService).removeStudentFromCourse(studentId, courseId);
+    }
 }
