@@ -3,6 +3,8 @@ package com.example.student_management.service;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.event.StudentEventPublisher;
+import com.example.student_management.event.StudentEventType;
 import com.example.student_management.exceptions.BookAlreadyAssignedException;
 import com.example.student_management.exceptions.DuplicateEmailException;
 import com.example.student_management.exceptions.InvalidEnrollmentException;
@@ -32,13 +34,15 @@ public class StudentService {
     private final CourseRepository courseRepository;
     private final Clock clock;
     private final StudentPhotoService studentPhotoService;
+    private final StudentEventPublisher eventPublisher;
 
-    public StudentService(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository, Clock clock, StudentPhotoService studentPhotoService) {
+    public StudentService(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository, Clock clock, StudentPhotoService studentPhotoService, StudentEventPublisher eventPublisher) {
         this.studentRepository = studentRepository;
         this.bookRepository = bookRepository;
         this.courseRepository = courseRepository;
         this.clock = clock;
         this.studentPhotoService = studentPhotoService;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostConstruct
@@ -60,7 +64,9 @@ public class StudentService {
         }
 
         student.setCreatedAt(Instant.now(clock));
-        return studentRepository.save(student);
+        Student saved = studentRepository.save(student);
+        eventPublisher.publish(StudentEventType.STUDENT_CREATED, saved.getId());
+        return saved;
     }
 
     public Student getStudentById(UUID id) {
@@ -70,15 +76,26 @@ public class StudentService {
 
     public Student updateStudent(UUID id, Student studentDetails) {
         Student student = getStudentById(id);
+
+        studentRepository.findByEmail(studentDetails.getEmail())
+                .filter(other -> !other.getId().equals(id))
+                .ifPresent(other -> {
+                    throw new DuplicateEmailException("A student with email '" + studentDetails.getEmail() + "' already exists.");
+                });
+
         student.setName(studentDetails.getName());
         student.setEmail(studentDetails.getEmail());
-        return studentRepository.save(student);
+        Student saved = studentRepository.save(student);
+        eventPublisher.publish(StudentEventType.STUDENT_UPDATED, id);
+        return saved;
     }
 
     @Transactional
     public void deleteStudent(UUID id) {
-        studentRepository.deleteById(id);
+        Student student = getStudentById(id); // 404 instead of a silent no-op for unknown ids
+        studentRepository.delete(student);
         studentPhotoService.deletePhotoIfExists(id);
+        eventPublisher.publish(StudentEventType.STUDENT_DELETED, id);
     }
 
     public Student assignBookToStudent(UUID studentId, UUID bookId) {
@@ -92,6 +109,7 @@ public class StudentService {
         book.setStudent(student);
         student.getBooks().add(book);
         bookRepository.save(book);
+        eventPublisher.publish(StudentEventType.BOOK_ASSIGNED, studentId, bookId);
         return student;
     }
 
@@ -105,9 +123,16 @@ public class StudentService {
     }
 
     public void removeBookFromStudent(UUID studentId, UUID bookId) {
+        getStudentById(studentId);
         Book book = findBook(bookId);
+
+        if (book.getStudent() == null || !studentId.equals(book.getStudent().getId())) {
+            throw new ResourceNotFoundException("Book " + bookId + " is not assigned to student " + studentId);
+        }
+
         book.setStudent(null);
         bookRepository.save(book);
+        eventPublisher.publish(StudentEventType.BOOK_REMOVED, studentId, bookId);
     }
 
     @Transactional
@@ -121,7 +146,9 @@ public class StudentService {
 
         student.getCourses().add(course);
         course.getStudents().add(student);
-        return studentRepository.save(student);
+        Student saved = studentRepository.save(student);
+        eventPublisher.publish(StudentEventType.COURSE_ENROLLED, studentId, courseId);
+        return saved;
     }
 
     public Set<Course> getCoursesByStudent(UUID studentId) {
@@ -134,6 +161,7 @@ public class StudentService {
         student.getCourses().remove(course);
         course.getStudents().remove(student);
         studentRepository.save(student);
+        eventPublisher.publish(StudentEventType.COURSE_DROPPED, studentId, courseId);
     }
 
     public Page<Student> searchStudents(String name, Pageable pageable) {

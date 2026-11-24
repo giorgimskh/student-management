@@ -3,6 +3,7 @@ package com.example.student_management.service;
 import com.example.student_management.domain.Student;
 import com.example.student_management.domain.StudentPhoto;
 import com.example.student_management.dto.PhotoResponseDto;
+import com.example.student_management.exceptions.InvalidPhotoException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.StudentPhotoRepository;
 import com.example.student_management.repository.StudentRepository;
@@ -30,6 +31,14 @@ public class StudentPhotoService {
     }
 
     public StudentPhoto storePhoto(UUID studentId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new InvalidPhotoException("Photo file must not be empty");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new InvalidPhotoException("Photo must be an image (got content type: " + contentType + ")");
+        }
+
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> studentNotFound(studentId));
 

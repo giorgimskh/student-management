@@ -3,6 +3,8 @@ package com.example.student_management.service;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.event.StudentEventPublisher;
+import com.example.student_management.event.StudentEventType;
 import com.example.student_management.exceptions.BookAlreadyAssignedException;
 import com.example.student_management.exceptions.DuplicateEmailException;
 import com.example.student_management.exceptions.InvalidEnrollmentException;
@@ -47,6 +49,9 @@ public class StudentServiceTest {
     @Mock
     private StudentPhotoService studentPhotoService;
 
+    @Mock
+    private StudentEventPublisher eventPublisher;
+
     private Student student;
     private UUID studentId;
 
@@ -63,7 +68,7 @@ public class StudentServiceTest {
         // Mockito mock here (it's a fixed real instance) — @InjectMocks only
         // wires fields annotated with @Mock/@Spy. This pattern (manual wiring
         // for a mix of mocks + real config values) is very common in real code.
-        studentService = new StudentService(studentRepository, bookRepository, courseRepository, fixedClock, studentPhotoService);
+        studentService = new StudentService(studentRepository, bookRepository, courseRepository, fixedClock, studentPhotoService, eventPublisher);
 
         studentId = UUID.randomUUID();
         student = Student.builder()
@@ -169,6 +174,81 @@ public class StudentServiceTest {
 
         verify(studentRepository,never()).save(any());
 
+    }
+
+    @Test
+    public void createStudent_publishesStudentCreatedEvent(){
+        when(studentRepository.findByEmail(student.getEmail())).thenReturn(Optional.empty());
+        when(studentRepository.save(any(Student.class))).thenAnswer(inv->inv.getArgument(0));
+
+        studentService.createStudent(student);
+
+        verify(eventPublisher).publish(StudentEventType.STUDENT_CREATED, studentId);
+    }
+
+    @Test
+    public void updateStudent_throwsDuplicateEmailException_whenEmailBelongsToAnotherStudent(){
+        Student other = Student.builder().id(UUID.randomUUID()).email("taken@example.com").build();
+        when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
+        when(studentRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(other));
+
+        Student details = Student.builder().name("Nino").email("taken@example.com").build();
+
+        assertThatThrownBy(() -> studentService.updateStudent(studentId, details))
+                .isInstanceOf(DuplicateEmailException.class);
+        verify(studentRepository, never()).save(any());
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    public void updateStudent_allowsKeepingOwnEmail(){
+        when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
+        when(studentRepository.findByEmail(student.getEmail())).thenReturn(Optional.of(student));
+        when(studentRepository.save(any(Student.class))).thenAnswer(inv->inv.getArgument(0));
+
+        Student details = Student.builder().name("New Name").email(student.getEmail()).build();
+        Student result = studentService.updateStudent(studentId, details);
+
+        assertThat(result.getName()).isEqualTo("New Name");
+        verify(eventPublisher).publish(StudentEventType.STUDENT_UPDATED, studentId);
+    }
+
+    @Test
+    public void deleteStudent_throwsResourceNotFoundException_whenStudentIsNotFound(){
+        when(studentRepository.findById(studentId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> studentService.deleteStudent(studentId))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(studentRepository, never()).delete(any());
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    public void removeBookFromStudent_throwsResourceNotFoundException_whenBookBelongsToAnotherStudent(){
+        UUID bookId = UUID.randomUUID();
+        Student owner = Student.builder().id(UUID.randomUUID()).build();
+        Book book = Book.builder().id(bookId).student(owner).build();
+        when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
+        when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
+
+        assertThatThrownBy(() -> studentService.removeBookFromStudent(studentId, bookId))
+                .isInstanceOf(ResourceNotFoundException.class);
+        assertThat(book.getStudent()).isEqualTo(owner);
+        verify(bookRepository, never()).save(any());
+    }
+
+    @Test
+    public void removeBookFromStudent_unassignsBook_andPublishesEvent(){
+        UUID bookId = UUID.randomUUID();
+        Book book = Book.builder().id(bookId).student(student).build();
+        when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
+        when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
+
+        studentService.removeBookFromStudent(studentId, bookId);
+
+        assertThat(book.getStudent()).isNull();
+        verify(bookRepository).save(book);
+        verify(eventPublisher).publish(StudentEventType.BOOK_REMOVED, studentId, bookId);
     }
 
 }
