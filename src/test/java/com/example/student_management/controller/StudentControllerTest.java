@@ -156,4 +156,21 @@ public class StudentControllerTest {
 
         verify(studentService).removeStudentFromCourse(studentId, courseId);
     }
+
+    @Test
+    void updateStudent_runsThroughCommandInvoker() throws Exception {
+        UUID id = UUID.randomUUID();
+        Student current = Student.builder().id(id).name("Old").email("old@example.com").build();
+        Student updated = Student.builder().id(id).name("New").email("new@example.com").build();
+        when(studentService.getStudentById(id)).thenReturn(current);
+        when(studentService.updateStudent(eq(id), any(Student.class))).thenReturn(updated);
+
+        mockMvc.perform(put("/api/students/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"New\",\"email\":\"new@example.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("New"));
+
+        verify(studentService).updateStudent(eq(id), any(Student.class));
+    }
 }

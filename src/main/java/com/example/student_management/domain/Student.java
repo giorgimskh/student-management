@@ -44,4 +44,15 @@ public class Student {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private StudentPhoto studentPhoto;
+
+    /** Snapshot of the profile fields an update can change (name and email). */
+    public StudentMemento createMemento() {
+        return new StudentMemento(name, email);
+    }
+
+    /** Puts the profile fields back to the state captured in {@code memento}. */
+    public void restore(StudentMemento memento) {
+        this.name = memento.name();
+        this.email = memento.email();
+    }
 }

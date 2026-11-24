@@ -5,6 +5,7 @@ import com.example.student_management.command.DropCourseCommand;
 import com.example.student_management.command.EnrollInCourseCommand;
 import com.example.student_management.command.RemoveBookCommand;
 import com.example.student_management.command.StudentCommandInvoker;
+import com.example.student_management.command.UpdateStudentCommand;
 import com.example.student_management.dto.BookResponse;
 import com.example.student_management.dto.CourseResponse;
 import com.example.student_management.dto.PagedResponse;
@@ -55,7 +56,7 @@ public class StudentController {
 
     @PutMapping("/{id}")
     public ResponseEntity<StudentResponse> updateStudent(@PathVariable UUID id, @Valid @RequestBody StudentRequest request) {
-        return ResponseEntity.ok(StudentResponse.from(studentService.updateStudent(id, request.toEntity())));
+        return ResponseEntity.ok(StudentResponse.from(commandInvoker.execute(new UpdateStudentCommand(studentService, id, request.toEntity()))));
     }
 
     @DeleteMapping("/{id}")

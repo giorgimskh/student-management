@@ -3,6 +3,7 @@ package com.example.student_management.service;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.domain.StudentMemento;
 import com.example.student_management.event.StudentEventPublisher;
 import com.example.student_management.event.StudentEventType;
 import com.example.student_management.exceptions.BookAlreadyAssignedException;
@@ -76,18 +77,38 @@ public class StudentService {
 
     public Student updateStudent(UUID id, Student studentDetails) {
         Student student = getStudentById(id);
-
-        studentRepository.findByEmail(studentDetails.getEmail())
-                .filter(other -> !other.getId().equals(id))
-                .ifPresent(other -> {
-                    throw new DuplicateEmailException("A student with email '" + studentDetails.getEmail() + "' already exists.");
-                });
+        ensureEmailAvailable(studentDetails.getEmail(), id);
 
         student.setName(studentDetails.getName());
         student.setEmail(studentDetails.getEmail());
         Student saved = studentRepository.save(student);
         eventPublisher.publish(StudentEventType.STUDENT_UPDATED, id);
         return saved;
+    }
+
+    /**
+     * Restores a student's profile from a snapshot taken earlier with
+     * {@link Student#createMemento()}. Fails with 409 if another student has
+     * taken the old email in the meantime.
+     */
+    public Student restoreStudent(UUID id, StudentMemento memento) {
+        Student student = getStudentById(id);
+        Student restored = new Student();
+        restored.restore(memento);
+        ensureEmailAvailable(restored.getEmail(), id);
+
+        student.restore(memento);
+        Student saved = studentRepository.save(student);
+        eventPublisher.publish(StudentEventType.STUDENT_UPDATED, id);
+        return saved;
+    }
+
+    private void ensureEmailAvailable(String email, UUID ownerId) {
+        studentRepository.findByEmail(email)
+                .filter(other -> !other.getId().equals(ownerId))
+                .ifPresent(other -> {
+                    throw new DuplicateEmailException("A student with email '" + email + "' already exists.");
+                });
     }
 
     @Transactional

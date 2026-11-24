@@ -3,6 +3,7 @@ package com.example.student_management.service;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.domain.StudentMemento;
 import com.example.student_management.event.StudentEventPublisher;
 import com.example.student_management.event.StudentEventType;
 import com.example.student_management.exceptions.BookAlreadyAssignedException;
@@ -251,4 +252,33 @@ public class StudentServiceTest {
         verify(eventPublisher).publish(StudentEventType.BOOK_REMOVED, studentId, bookId);
     }
 
+    @Test
+    public void restoreStudent_putsBackSnapshot_andPublishesEvent(){
+        StudentMemento snapshot = student.createMemento();
+        student.setName("Changed");
+        student.setEmail("changed@example.com");
+        when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
+        when(studentRepository.findByEmail("nino@example.com")).thenReturn(Optional.empty());
+        when(studentRepository.save(any(Student.class))).thenAnswer(inv->inv.getArgument(0));
+
+        Student result = studentService.restoreStudent(studentId, snapshot);
+
+        assertThat(result.getName()).isEqualTo("Nino Kapanadze");
+        assertThat(result.getEmail()).isEqualTo("nino@example.com");
+        verify(eventPublisher).publish(StudentEventType.STUDENT_UPDATED, studentId);
+    }
+
+    @Test
+    public void restoreStudent_throwsDuplicateEmail_andLeavesStudentUnchanged_whenOldEmailWasTaken(){
+        StudentMemento snapshot = student.createMemento();
+        student.setEmail("changed@example.com");
+        Student other = Student.builder().id(UUID.randomUUID()).email("nino@example.com").build();
+        when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
+        when(studentRepository.findByEmail("nino@example.com")).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> studentService.restoreStudent(studentId, snapshot))
+                .isInstanceOf(DuplicateEmailException.class);
+        assertThat(student.getEmail()).isEqualTo("changed@example.com");
+        verify(studentRepository, never()).save(any());
+    }
 }

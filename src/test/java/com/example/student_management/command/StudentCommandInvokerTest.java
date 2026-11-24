@@ -1,12 +1,14 @@
 package com.example.student_management.command;
 
 import com.example.student_management.domain.Student;
+import com.example.student_management.domain.StudentMemento;
 import com.example.student_management.exceptions.BookAlreadyAssignedException;
 import com.example.student_management.exceptions.NothingToUndoException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,6 +17,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -94,5 +97,24 @@ class StudentCommandInvokerTest {
             invoker.execute(new DropCourseCommand(studentService, studentId, UUID.randomUUID()));
         }
         assertThat(invoker.history()).hasSize(StudentCommandInvoker.MAX_HISTORY);
+    }
+
+    @Test
+    void updateStudent_undo_restoresPreviousProfileViaMemento() {
+        Student current = Student.builder().id(studentId).name("Nino").email("nino@example.com").build();
+        Student details = Student.builder().name("New").email("new@example.com").build();
+        when(studentService.getStudentById(studentId)).thenReturn(current);
+
+        invoker.execute(new UpdateStudentCommand(studentService, studentId, details));
+        current.setName("New");          // what the real update would have done
+        current.setEmail("new@example.com");
+        invoker.undoLast();
+
+        ArgumentCaptor<StudentMemento> captor = ArgumentCaptor.forClass(StudentMemento.class);
+        verify(studentService).restoreStudent(eq(studentId), captor.capture());
+        Student probe = new Student();
+        probe.restore(captor.getValue());
+        assertThat(probe.getName()).isEqualTo("Nino");
+        assertThat(probe.getEmail()).isEqualTo("nino@example.com");
     }
 }
