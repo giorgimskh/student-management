@@ -23,7 +23,8 @@ public class StudentPhoto {
     @JoinColumn(name = "student_id", unique = true, nullable = false)
     private Student student;
 
-    @Lob
+    // No @Lob: with PostgreSQLDialect, @Lob byte[] is bound as a large-object id
+    // (bigint), which fails against this bytea column. A plain byte[] binds as bytea.
     @Column(columnDefinition = "bytea", nullable = false)
     private byte[] data;
 

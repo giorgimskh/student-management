@@ -44,7 +44,11 @@ public class AppConfig {
 
     @Bean
     public FilterRegistrationBean<ResponseTimeFilter> responseTimeFilter() {
-        return register(new ResponseTimeFilter(), 3);
+        FilterRegistrationBean<ResponseTimeFilter> registration = register(new ResponseTimeFilter(), 3);
+        // API only. The filter buffers the body, and for "/" (forwarded to index.html)
+        // Tomcat closes the real response after the forward, so the page came back empty.
+        registration.addUrlPatterns("/api/*");
+        return registration;
     }
 
     private static <T extends Filter> FilterRegistrationBean<T> register(T filter, int order) {
