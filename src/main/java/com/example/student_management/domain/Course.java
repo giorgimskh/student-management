@@ -1,5 +1,7 @@
 package com.example.student_management.domain;
 
+import com.example.student_management.visitor.StudentGraphVisitor;
+import com.example.student_management.visitor.Visitable;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Course {
+public class Course implements Visitable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -36,5 +38,11 @@ public class Course {
         if (hasName) return courseName;
         if (hasCode) return code;
         return "course " + id;
+    }
+
+    /** Visits only this element; it does not walk back to its student(s). */
+    @Override
+    public void accept(StudentGraphVisitor visitor) {
+        visitor.visit(this);
     }
 }
