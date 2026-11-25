@@ -25,7 +25,7 @@ const state = {
     selectedId: null,
     bookPage: 0,
     coursePage: 0,
-    names: new Map(),       // studentId -> name, for the activity feed
+    names: new Map(),       // id -> display name for students, books and courses (activity feed, undo history)
     photoUrls: new Map(),   // studentId -> object URL (photos need the API key header, so <img src> can't fetch them)
 };
 
@@ -59,6 +59,20 @@ function timeAgo(iso) {
     if (s < 3600) return `${Math.round(s / 60)} min ago`;
     if (s < 86400) return `${Math.round(s / 3600)} h ago`;
     return date.toLocaleDateString();
+}
+
+/** Remembers display names so ids from the server can be shown as names. */
+function rememberNames({ students = [], books = [], courses = [] }) {
+    students.forEach(s => state.names.set(s.id, s.name));
+    books.forEach(b => state.names.set(b.id, `"${b.title}"`));
+    courses.forEach(c => state.names.set(c.id, c.courseName));
+}
+
+const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+/** "Enroll student 43bb… in course dcfa…" -> "Enroll student Ana in course Databases". Unknown ids are shortened. */
+function withNames(text) {
+    return String(text).replace(UUID_PATTERN, id => state.names.get(id) || `#${id.slice(0, 8)}`);
 }
 
 function apiKey() {
@@ -153,7 +167,7 @@ async function loadStudents() {
     const page = await attempt(() => api(path));
     if (!page) { list.innerHTML = '<li class="none">Could not load students.</li>'; return; }
 
-    page.content.forEach(s => state.names.set(s.id, s.name));
+    rememberNames({ students: page.content });
     const shown = state.statusFilter ? page.content.filter(s => s.status === state.statusFilter) : page.content;
     list.innerHTML = shown.length ? shown.map(s => `
         <li class="row ${s.id === state.selectedId ? "selected" : ""}" data-id="${esc(s.id)}">
@@ -212,7 +226,7 @@ async function renderStudentDetail() {
         attempt(() => api(`/api/students/${id}/activity`)),
     ]);
     if (!student) { panel.innerHTML = '<div class="empty-state"><p>Student not found.</p></div>'; return; }
-    state.names.set(student.id, student.name);
+    rememberNames({ students: [student], books: allBooks?.content, courses: allCourses?.content });
 
     const rules = STATUS_RULES[student.status] || STATUS_RULES.ACTIVE;
     const myBooks = books?.content ?? student.books ?? [];
@@ -383,6 +397,7 @@ async function loadBooks() {
     const tbody = $("#bookTable");
     const page = await attempt(() => api(`/api/books?page=${state.bookPage}&size=${PAGE_SIZE}&sort=title`));
     if (!page) return;
+    rememberNames({ books: page.content });
     if (!page.content.length) {
         tbody.innerHTML = '<tr><td colspan="4" class="none">No books yet.</td></tr>';
         pager($("#bookPager"), page, () => {});
@@ -414,6 +429,7 @@ async function loadCourses() {
     const grid = $("#courseGrid");
     const page = await attempt(() => api(`/api/courses?page=${state.coursePage}&size=12&sort=courseName`));
     if (!page) return;
+    rememberNames({ courses: page.content });
     grid.innerHTML = page.content.length ? page.content.map(c => `
         <div class="course-card">
             <div class="course-code">${esc(c.code)}</div>
@@ -456,14 +472,15 @@ function gotoStudent(id) {
 
 /* ---------- Activity & undo ---------- */
 
+/** [text, tone]; "{item}" is replaced with the related book or course name. */
 const EVENT_TEXT = {
     STUDENT_CREATED: ["was added", ""],
     STUDENT_UPDATED: ["updated their profile", ""],
     STUDENT_DELETED: ["was deleted", "danger"],
-    BOOK_ASSIGNED: ["borrowed a book", ""],
-    BOOK_REMOVED: ["gave back a book", ""],
-    COURSE_ENROLLED: ["enrolled in a course", ""],
-    COURSE_DROPPED: ["dropped a course", "warn"],
+    BOOK_ASSIGNED: ["borrowed {item}", ""],
+    BOOK_REMOVED: ["gave back {item}", ""],
+    COURSE_ENROLLED: ["enrolled in {item}", ""],
+    COURSE_DROPPED: ["dropped {item}", "warn"],
     STUDENT_SUSPENDED: ["was suspended", "warn"],
     STUDENT_REACTIVATED: ["was reactivated", ""],
     STUDENT_GRADUATED: ["graduated", "grad"],
@@ -474,28 +491,34 @@ const EVENT_TEXT = {
 function activityList(events, limit = 50) {
     if (!events.length) return '<p class="none">Nothing yet.</p>';
     return `<ol class="timeline">${events.slice(0, limit).map(e => {
-        const [text, tone] = EVENT_TEXT[e.type] || [e.type.toLowerCase().replaceAll("_", " "), ""];
-        const who = state.names.get(e.studentId) || `Student ${String(e.studentId).slice(0, 8)}`;
+        const [template, tone] = EVENT_TEXT[e.type] || [e.type.toLowerCase().replaceAll("_", " "), ""];
+        const fallback = e.type.startsWith("BOOK") ? "a book" : "a course";
+        const text = template.replace("{item}", (e.relatedId && state.names.get(e.relatedId)) || fallback);
+        const who = state.names.get(e.studentId) || `Student #${String(e.studentId).slice(0, 8)}`;
         return `<li><span class="dot ${tone}"></span><span><strong>${esc(who)}</strong> ${esc(text)}</span>
                 <span class="time" title="${esc(e.occurredAt)}">${esc(timeAgo(e.occurredAt))}</span></li>`;
     }).join("")}</ol>`;
 }
 
 async function loadActivity() {
-    const [events, history] = await Promise.all([
+    const [events, history, students, books, courses] = await Promise.all([
         attempt(() => api("/api/activity")),
         attempt(() => api("/api/commands/history")),
+        attempt(() => api("/api/students?size=100")),
+        attempt(() => api("/api/books?size=100")),
+        attempt(() => api("/api/courses?size=100")),
     ]);
+    rememberNames({ students: students?.content, books: books?.content, courses: courses?.content });
     $("#activityFeed").outerHTML = `<div id="activityFeed">${activityList(events ?? [])}</div>`;
     $("#historyList").innerHTML = (history ?? []).length
-        ? history.map(h => `<li>${esc(h)}</li>`).join("")
+        ? history.map(h => `<li>${esc(withNames(h))}</li>`).join("")
         : '<li class="none" style="background:none">Nothing to undo.</li>';
 }
 
 async function undoLast() {
     const result = await attempt(() => api("/api/commands/undo", { method: "POST" }));
     if (!result) return;
-    toast(`Undone: ${result.undone}`);
+    toast(`Undone: ${withNames(result.undone)}`);
     if (state.view === "students") { loadStudents(); if (state.selectedId) renderStudentDetail(); }
     else showView(state.view);
 }
