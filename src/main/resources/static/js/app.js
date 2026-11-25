@@ -138,7 +138,7 @@ function showView(view) {
     state.view = view;
     $$(".tab").forEach(t => t.classList.toggle("active", t.dataset.view === view));
     $$(".view").forEach(v => v.classList.toggle("active", v.id === `view-${view}`));
-    ({ students: loadStudents, books: loadBooks, courses: loadCourses, activity: loadActivity })[view]();
+    ({ students: loadStudents, books: loadBooks, courses: loadCourses, activity: loadActivity, reports: loadReports })[view]();
 }
 
 /* ---------- Students ---------- */
@@ -204,12 +204,13 @@ async function renderStudentDetail() {
     const id = state.selectedId;
     if (!id) return;
 
-    const [student, books, allBooks, allCourses, activity] = await Promise.all([
+    const [student, books, allBooks, allCourses, activity, findings] = await Promise.all([
         attempt(() => api(`/api/students/${id}`)),
         attempt(() => api(`/api/students/${id}/books?size=100`)),
         attempt(() => api(`/api/books?size=100`)),
         attempt(() => api(`/api/courses?size=100`)),
         attempt(() => api(`/api/students/${id}/activity`)),
+        attempt(() => api(`/api/students/${id}/audit`)),
     ]);
     if (!student) { panel.innerHTML = '<div class="empty-state"><p>Student not found.</p></div>'; return; }
     state.names.set(student.id, student.name);
@@ -241,6 +242,11 @@ async function renderStudentDetail() {
         </div>
 
         <div class="detail-body">
+            ${findings?.length ? `<section>
+                <h4 class="section-title">Needs attention <span>${findings.length}</span></h4>
+                ${findingList(findings, { showStudent: false })}
+            </section>` : ""}
+
             <section>
                 <h4 class="section-title">Status</h4>
                 <div class="status-actions">
@@ -500,6 +506,96 @@ async function undoLast() {
     else showView(state.view);
 }
 
+/* ---------- Reports ---------- */
+
+const AUDIT_RULES = {
+    BOOK_NOT_RETURNED: ["Book not returned", "warn"],
+    ENROLLED_AFTER_WITHDRAWAL: ["Enrolled after withdrawal", "warn"],
+    PHOTO_SIZE_MISMATCH: ["Photo data mismatch", "danger"],
+};
+
+function findingList(findings, { showStudent = true } = {}) {
+    return `<ul class="findings">${findings.map(f => {
+        const [text, tone] = AUDIT_RULES[f.rule] || [label(f.rule).replaceAll("_", " "), "warn"];
+        return `<li class="finding">
+            <span class="finding-tag ${tone}"><span aria-hidden="true">!</span> ${esc(text)}</span>
+            <span class="finding-body">
+                ${showStudent ? `<button class="link" data-goto-student="${esc(f.studentId)}">${esc(f.studentName)}</button>` : ""}
+                <span class="finding-detail">${esc(f.detail)}</span>
+            </span>
+        </li>`;
+    }).join("")}</ul>`;
+}
+
+/** Horizontal bars, one row per item; the label and number carry the meaning, the bar shows proportion. */
+function barList(items) {
+    if (!items.length) return '<li class="none">Nothing yet.</li>';
+    const max = Math.max(...items.map(i => i.value), 1);
+    const total = items.reduce((sum, i) => sum + i.value, 0);
+    return items.map(i => {
+        const pct = total ? Math.round(i.value * 100 / total) : 0;
+        return `<li title="${esc(i.tooltip)}: ${i.value} (${pct}%)">
+            <span class="bar-label">${i.labelHtml}</span>
+            <span class="bar-track"><span class="bar" style="width:${i.value ? `max(2px, ${(i.value / max) * 100}%)` : "0"}"></span></span>
+            <span class="bar-value">${i.value}</span>
+        </li>`;
+    }).join("");
+}
+
+function statTile(value, title, sub = "") {
+    return `<div class="stat-tile">
+        <div class="stat-value">${esc(value)}</div>
+        <div class="stat-title">${esc(title)}</div>
+        ${sub ? `<div class="stat-sub">${esc(sub)}</div>` : ""}
+    </div>`;
+}
+
+async function loadReports() {
+    const [stats, findings] = await Promise.all([
+        attempt(() => api("/api/reports/statistics")),
+        attempt(() => api("/api/reports/audit")),
+    ]);
+
+    if (stats) {
+        const n = stats.totalStudents;
+        $("#statTiles").innerHTML =
+            statTile(n, "Students") +
+            statTile(stats.booksOnLoan, "Books on loan", `${stats.averageBooksPerStudent} per student`) +
+            statTile(stats.enrollments, "Enrollments", `${stats.averageCoursesPerStudent} per student`) +
+            statTile(stats.studentsWithPhoto, "With a photo", n ? `${Math.round(stats.studentsWithPhoto * 100 / n)}% of students` : "");
+
+        const order = ["ACTIVE", "SUSPENDED", "GRADUATED", "WITHDRAWN"];
+        $("#statusBars").innerHTML = n ? barList(order.map(s => ({
+            labelHtml: badge(s), tooltip: label(s), value: stats.studentsByStatus[s] ?? 0,
+        }))) : '<li class="none">No students yet.</li>';
+
+        $("#courseBars").innerHTML = barList(stats.enrollmentsByCourse.map(c => ({
+            labelHtml: `<span class="course-code">${esc(c.code || "")}</span> <span class="bar-name">${esc(c.courseName)}</span>`,
+            tooltip: `${c.code ? c.code + " · " : ""}${c.courseName}`,
+            value: c.students,
+        })));
+    }
+
+    if (findings) {
+        findings.forEach(f => state.names.set(f.studentId, f.studentName));
+        $("#auditCount").textContent = findings.length || "";
+        $("#auditList").outerHTML = findings.length
+            ? findingList(findings).replace('<ul class="findings">', '<ul id="auditList" class="findings">')
+            : '<ul id="auditList" class="findings"><li class="all-clear">✓ No problems found.</li></ul>';
+    }
+}
+
+async function downloadCsv() {
+    const res = await attempt(() => api("/api/reports/students.csv", { raw: true }));
+    if (!res) return;
+    const url = URL.createObjectURL(await res.blob());
+    const link = Object.assign(document.createElement("a"), { href: url, download: "students.csv" });
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /* ---------- Dialogs & forms ---------- */
 
 function openSettings() {
@@ -540,6 +636,12 @@ function init() {
     $("#undoBtn").addEventListener("click", undoLast);
     $("#settingsBtn").addEventListener("click", openSettings);
     $("#refreshActivity").addEventListener("click", loadActivity);
+    $("#refreshReports").addEventListener("click", loadReports);
+    $("#downloadCsv").addEventListener("click", downloadCsv);
+    document.addEventListener("click", e => {
+        const target = e.target.closest("[data-goto-student]");
+        if (target) gotoStudent(target.dataset.gotoStudent);
+    });
     $("#settingsForm").addEventListener("submit", e => {
         e.preventDefault();
         try { localStorage.setItem("apiKey", e.target.apiKey.value.trim() || DEFAULT_API_KEY); } catch { /* private mode */ }
