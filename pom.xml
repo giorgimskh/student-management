@@ -29,6 +29,11 @@
 	<properties>
 		<java.version>25</java.version>
 		<lombok.version>1.18.42</lombok.version>
+		<!-- H2 2.4.240 breaks CHECK constraints (e.g. the one Hibernate adds for enum
+		     columns) once the connection that created the table is closed:
+		     "Check constraint invalid: CONSTRAINT_n". 2.3.232 does not have this bug.
+		     H2 is test-only here; production uses Postgres. -->
+		<h2.version>2.3.232</h2.version>
 	</properties>
 	<dependencies>
 		<dependency>

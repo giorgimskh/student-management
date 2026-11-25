@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Management</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d6f6a'/%3E%3Cpath d='M6 13l10-5 10 5-10 5z' fill='%23f4b942'/%3E%3Cpath d='M10 15.5v5c0 1.5 3 3 6 3s6-1.5 6-3v-5l-6 3z' fill='%23fff'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32"><path d="M6 13l10-5 10 5-10 5z" fill="currentColor"/><path d="M10 15.5v5c0 1.5 3 3 6 3s6-1.5 6-3v-5l-6 3z" fill="currentColor" opacity=".55"/></svg>
+        </span>
+        <span class="brand-name">Student Management</span>
+    </div>
+    <nav class="tabs" role="tablist">
+        <button class="tab active" data-view="students" role="tab">Students</button>
+        <button class="tab" data-view="books" role="tab">Books</button>
+        <button class="tab" data-view="courses" role="tab">Courses</button>
+        <button class="tab" data-view="activity" role="tab">Activity</button>
+    </nav>
+    <div class="topbar-actions">
+        <button id="undoBtn" class="btn btn-ghost" title="Undo the last action">
+            <svg viewBox="0 0 24 24" class="icon"><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 010 11H11" /></svg>
+            Undo
+        </button>
+        <button id="settingsBtn" class="btn btn-ghost icon-only" title="API key">
+            <svg viewBox="0 0 24 24" class="icon"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M17 6l3 3M14 9l2 2"/></svg>
+        </button>
+    </div>
+</header>
+
+<main>
+    <!-- STUDENTS -->
+    <section id="view-students" class="view active">
+        <div class="split">
+            <div class="panel list-panel">
+                <div class="panel-head">
+                    <h2>Students</h2>
+                    <button class="btn btn-primary" data-open="studentDialog">+ New student</button>
+                </div>
+                <div class="toolbar">
+                    <input id="studentSearch" type="search" placeholder="Search by name…" autocomplete="off">
+                    <select id="statusFilter" title="Filter by status">
+                        <option value="">All statuses</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="SUSPENDED">Suspended</option>
+                        <option value="GRADUATED">Graduated</option>
+                        <option value="WITHDRAWN">Withdrawn</option>
+                    </select>
+                </div>
+                <ul id="studentList" class="rows"></ul>
+                <div class="pager" id="studentPager"></div>
+            </div>
+
+            <div class="panel detail-panel" id="studentDetail">
+                <div class="empty-state">
+                    <div class="empty-illustration" aria-hidden="true"></div>
+                    <p>Select a student to see their profile, books and courses.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BOOKS -->
+    <section id="view-books" class="view">
+        <div class="panel">
+            <div class="panel-head">
+                <h2>Books</h2>
+                <button class="btn btn-primary" data-open="bookDialog">+ New book</button>
+            </div>
+            <table class="table">
+                <thead><tr><th>Title</th><th>ISBN</th><th>Borrowed by</th><th></th></tr></thead>
+                <tbody id="bookTable"></tbody>
+            </table>
+            <div class="pager" id="bookPager"></div>
+        </div>
+    </section>
+
+    <!-- COURSES -->
+    <section id="view-courses" class="view">
+        <div class="panel">
+            <div class="panel-head">
+                <h2>Courses</h2>
+                <button class="btn btn-primary" data-open="courseDialog">+ New course</button>
+            </div>
+            <div id="courseGrid" class="card-grid"></div>
+            <div class="pager" id="coursePager"></div>
+        </div>
+    </section>
+
+    <!-- ACTIVITY -->
+    <section id="view-activity" class="view">
+        <div class="split">
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Recent activity</h2>
+                    <button class="btn btn-ghost" id="refreshActivity">Refresh</button>
+                </div>
+                <ol id="activityFeed" class="timeline"></ol>
+            </div>
+            <div class="panel">
+                <div class="panel-head"><h2>Undo history</h2></div>
+                <p class="hint">Actions you can undo, most recent last. <strong>Undo</strong> in the top bar reverts the last one.</p>
+                <ol id="historyList" class="history"></ol>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- DIALOGS -->
+<dialog id="studentDialog" class="dialog">
+    <form method="dialog" id="studentForm">
+        <h3>New student</h3>
+        <label>Name <input name="name" required maxlength="100"></label>
+        <label>Email <input name="email" type="email" required></label>
+        <p class="form-error" hidden></p>
+        <div class="dialog-actions">
+            <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-primary" value="submit">Create</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="bookDialog" class="dialog">
+    <form method="dialog" id="bookForm">
+        <h3>New book</h3>
+        <label>Title <input name="title" required></label>
+        <label>ISBN <input name="isbn" required placeholder="9780134757599"></label>
+        <p class="form-error" hidden></p>
+        <div class="dialog-actions">
+            <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-primary" value="submit">Create</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="courseDialog" class="dialog">
+    <form method="dialog" id="courseForm">
+        <h3>New course</h3>
+        <label>Course name <input name="courseName" required></label>
+        <label>Code <input name="code" required placeholder="CS101"></label>
+        <p class="form-error" hidden></p>
+        <div class="dialog-actions">
+            <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-primary" value="submit">Create</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="settingsDialog" class="dialog">
+    <form method="dialog" id="settingsForm">
+        <h3>API key</h3>
+        <p class="hint">Sent as the <code>X-Api-Key</code> header on every request. It's stored only in this browser.</p>
+        <label>Key <input name="apiKey" autocomplete="off"></label>
+        <div class="dialog-actions">
+            <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-primary" value="submit">Save</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="courseStudentsDialog" class="dialog">
+    <form method="dialog">
+        <h3 id="courseStudentsTitle">Students</h3>
+        <ul id="courseStudentsList" class="rows compact"></ul>
+        <div class="dialog-actions">
+            <button class="btn btn-primary">Close</button>
+        </div>
+    </form>
+</dialog>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

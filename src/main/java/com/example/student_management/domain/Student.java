@@ -1,5 +1,8 @@
 package com.example.student_management.domain;
 
+import com.example.student_management.state.StudentState;
+import com.example.student_management.state.StudentStatus;
+import com.example.student_management.state.StudentTransition;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,6 +28,16 @@ public class Student {
     private String email;
 
     private Instant createdAt;
+
+    /**
+     * Nullable on purpose: with {@code ddl-auto=update} the column is added to an
+     * existing table, and rows created before it existed are read as ACTIVE.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    @Builder.Default
+    private StudentStatus status = StudentStatus.ACTIVE;
+
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -44,6 +57,20 @@ public class Student {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private StudentPhoto studentPhoto;
+
+    public StudentStatus getStatus() {
+        return status == null ? StudentStatus.ACTIVE : status;
+    }
+
+    /** The behaviour for the current status (State pattern). */
+    public StudentState getState() {
+        return getStatus().state();
+    }
+
+    /** Moves to the status {@code transition} leads to, or throws if the current state forbids it. */
+    public void apply(StudentTransition transition) {
+        this.status = transition.applyTo(getState()).status();
+    }
 
     /** Snapshot of the profile fields an update can change (name and email). */
     public StudentMemento createMemento() {

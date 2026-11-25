@@ -1,6 +1,7 @@
 package com.example.student_management.controller;
 
 import com.example.student_management.command.AssignBookCommand;
+import com.example.student_management.command.ChangeStudentStatusCommand;
 import com.example.student_management.command.DropCourseCommand;
 import com.example.student_management.command.EnrollInCourseCommand;
 import com.example.student_management.command.RemoveBookCommand;
@@ -18,6 +19,7 @@ import com.example.student_management.dto.StudentRequest;
 import com.example.student_management.dto.StudentResponse;
 import com.example.student_management.mapper.EntityMapper;
 import com.example.student_management.service.StudentService;
+import com.example.student_management.state.StudentTransition;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -79,6 +81,31 @@ public class StudentController {
     public ResponseEntity<Void> deleteStudent(@PathVariable UUID id) {
         studentService.deleteStudent(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/suspend")
+    public ResponseEntity<StudentResponse> suspendStudent(@PathVariable UUID id) {
+        return changeStatus(id, StudentTransition.SUSPEND);
+    }
+
+    @PostMapping("/{id}/reactivate")
+    public ResponseEntity<StudentResponse> reactivateStudent(@PathVariable UUID id) {
+        return changeStatus(id, StudentTransition.REACTIVATE);
+    }
+
+    @PostMapping("/{id}/graduate")
+    public ResponseEntity<StudentResponse> graduateStudent(@PathVariable UUID id) {
+        return changeStatus(id, StudentTransition.GRADUATE);
+    }
+
+    @PostMapping("/{id}/withdraw")
+    public ResponseEntity<StudentResponse> withdrawStudent(@PathVariable UUID id) {
+        return changeStatus(id, StudentTransition.WITHDRAW);
+    }
+
+    private ResponseEntity<StudentResponse> changeStatus(UUID id, StudentTransition transition) {
+        return ResponseEntity.ok(studentMapper.toResponse(
+                commandInvoker.execute(new ChangeStudentStatusCommand(studentService, id, transition))));
     }
 
     @PostMapping("/{studentId}/books/{bookId}")

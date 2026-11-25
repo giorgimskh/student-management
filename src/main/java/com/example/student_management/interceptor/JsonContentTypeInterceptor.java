@@ -22,6 +22,9 @@ public class JsonContentTypeInterceptor implements HandlerInterceptor {
 
         String contentType=request.getContentType();
 
+        // file uploads (the photo endpoint) are multipart; that endpoint declares what it consumes itself
+        if (contentType != null && contentType.startsWith("multipart/form-data")) return true;
+
         if(contentType==null || !contentType.startsWith("application/json")){
             response.setStatus(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
             response.setContentType("application/json");
