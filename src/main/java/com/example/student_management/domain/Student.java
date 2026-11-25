@@ -31,12 +31,9 @@ public class Student implements Visitable {
 
     private Instant createdAt;
 
-    /**
-     * Nullable on purpose: with {@code ddl-auto=update} the column is added to an
-     * existing table, and rows created before it existed are read as ACTIVE.
-     */
+    /** Required in the database (migration V2 filled in ACTIVE for older rows). */
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(length = 20, nullable = false)
     @Builder.Default
     private StudentStatus status = StudentStatus.ACTIVE;
 
@@ -60,6 +57,7 @@ public class Student implements Visitable {
     @EqualsAndHashCode.Exclude
     private StudentPhoto studentPhoto;
 
+    /** ACTIVE if not set yet (e.g. {@code setStatus(null)} or {@code new Student()} before saving). */
     public StudentStatus getStatus() {
         return status == null ? StudentStatus.ACTIVE : status;
     }

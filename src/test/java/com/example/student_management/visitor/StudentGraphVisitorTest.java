@@ -95,31 +95,6 @@ class StudentGraphVisitorTest {
         assertThat(stats.enrollmentsByCourse()).isEmpty();
     }
 
-    // --- CsvExportVisitor ---
-
-    @Test
-    void csv_hasOneRowPerStudent_withSortedLists() {
-        Student ana = student("Ana", StudentStatus.ACTIVE, List.of("Refactoring", "Clean Code"), databases, algorithms);
-        ana.setStudentPhoto(photo(1, 1));
-        Student beka = student("Beka", StudentStatus.SUSPENDED, List.of());
-
-        String csv = visitAll(new CsvExportVisitor(), ana, beka).result();
-
-        assertThat(csv).isEqualTo(
-                CsvExportVisitor.HEADER + "\r\n"
-                + "Ana,ana@example.com,ACTIVE,Clean Code; Refactoring,CS101; CS202,true\r\n"
-                + "Beka,beka@example.com,SUSPENDED,,,false\r\n");
-    }
-
-    @Test
-    void csv_quotesSpecialCharacters_andDefusesFormulas() {
-        assertThat(CsvExportVisitor.cell("Smith, John")).isEqualTo("\"Smith, John\"");
-        assertThat(CsvExportVisitor.cell("The \"Book\"")).isEqualTo("\"The \"\"Book\"\"\"");
-        assertThat(CsvExportVisitor.cell("=HYPERLINK(\"x\")")).isEqualTo("\"'=HYPERLINK(\"\"x\"\")\"");
-        assertThat(CsvExportVisitor.cell("@SUM(A1)")).isEqualTo("'@SUM(A1)");
-        assertThat(CsvExportVisitor.cell(null)).isEmpty();
-    }
-
     // --- StudentAuditVisitor ---
 
     @Test

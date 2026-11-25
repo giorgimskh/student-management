@@ -1,32 +1,35 @@
 package com.example.student_management.service;
 
+import com.example.student_management.TestcontainersConfiguration;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
+import com.example.student_management.domain.StudentPhoto;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.service.impl.StudentReportServiceImpl;
 import com.example.student_management.state.StudentStatus;
-import com.example.student_management.visitor.CsvExportVisitor;
 import com.example.student_management.visitor.StatisticsVisitor;
+import com.example.student_management.visitor.StudentGraphVisitor;
 import com.example.student_management.visitor.StudentStatistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Runs visitors over entities loaded from a real (H2) database, so the lazy collections are walked for real. */
-@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
+/** Runs visitors over entities loaded from a real (Postgres) database, so the lazy collections are walked for real. */
 @DataJpaTest
-@Import(StudentReportServiceImpl.class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import({TestcontainersConfiguration.class, StudentReportServiceImpl.class})
 class StudentReportServiceTest {
     @Autowired
     private StudentReportService reportService;
@@ -66,10 +69,15 @@ class StudentReportServiceTest {
 
     @Test
     void visitAllStudents_visitsInNameOrder() {
-        String csv = reportService.visitAllStudents(new CsvExportVisitor()).result();
+        List<String> visited = new ArrayList<>();
+        reportService.visitAllStudents(new StudentGraphVisitor() {
+            public void visit(Student s) { visited.add(s.getName()); }
+            public void visit(Book b) { }
+            public void visit(Course c) { }
+            public void visit(StudentPhoto p) { }
+        });
 
-        assertThat(csv.lines().skip(1).map(line -> line.substring(0, line.indexOf(','))))
-                .containsExactly("Ana", "Beka");
+        assertThat(visited).containsExactly("Ana", "Beka");
     }
 
     @Test

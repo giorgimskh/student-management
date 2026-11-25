@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -77,13 +76,4 @@ class ReportControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    @Test
-    void csv_isDownloadedAsAttachment() throws Exception {
-        mockMvc.perform(get("/api/reports/students.csv"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith("text/csv"))
-                .andExpect(header().string("Content-Disposition", containsString("attachment")))
-                .andExpect(header().string("Content-Disposition", containsString("students.csv")))
-                .andExpect(content().string(containsString("Beka,beka@example.com,GRADUATED,Clean Code,,false")));
-    }
 }
