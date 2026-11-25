@@ -20,6 +20,7 @@
         <button class="tab" data-view="books" role="tab">Books</button>
         <button class="tab" data-view="courses" role="tab">Courses</button>
         <button class="tab" data-view="activity" role="tab">Activity</button>
+        <button class="tab" data-view="reports" role="tab">Reports</button>
     </nav>
     <div class="topbar-actions">
         <button id="undoBtn" class="btn btn-ghost" title="Undo the last action">
@@ -117,6 +118,36 @@
                 <p class="hint">Actions you can undo, most recent last. <strong>Undo</strong> in the top bar reverts the last one.</p>
                 <ol id="historyList" class="history"></ol>
             </div>
+        </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="view-reports" class="view">
+        <div class="panel-head reports-head">
+            <h2>Reports</h2>
+            <div class="btns">
+                <button class="btn btn-ghost" id="refreshReports">Refresh</button>
+                <button class="btn btn-primary" data-export="students" title="Download all students as CSV">
+                    <svg viewBox="0 0 24 24" class="icon"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+                    Download CSV
+                </button>
+            </div>
+        </div>
+        <div id="statTiles" class="stat-tiles"></div>
+        <div class="report-grid">
+            <div class="panel">
+                <h4 class="section-title">Students by status</h4>
+                <ul id="statusBars" class="bars"></ul>
+            </div>
+            <div class="panel">
+                <h4 class="section-title">Enrollments by course</h4>
+                <ul id="courseBars" class="bars"></ul>
+            </div>
+        </div>
+        <div class="panel">
+            <h4 class="section-title">Needs attention <span id="auditCount"></span></h4>
+            <p class="hint">Changing a student's status doesn't return their books or drop their courses. These are the cases to follow up.</p>
+            <ul id="auditList" class="findings"></ul>
         </div>
     </section>
 </main>

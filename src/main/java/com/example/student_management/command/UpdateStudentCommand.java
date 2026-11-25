@@ -38,4 +38,19 @@ public final class UpdateStudentCommand implements StudentCommand<Student> {
     public String description() {
         return "Update profile of student " + studentId;
     }
+
+    @Override
+    public UUID studentId() {
+        return studentId;
+    }
+
+    /** The new profile values this command applies. */
+    public Student details() {
+        return details;
+    }
+
+    @Override
+    public <T> T accept(StudentCommandVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

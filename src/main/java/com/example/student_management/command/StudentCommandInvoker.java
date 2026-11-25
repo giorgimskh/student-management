@@ -13,10 +13,14 @@ public interface StudentCommandInvoker {
     /**
      * Undoes the most recent command and removes it from the history.
      *
+     * @throws RuntimeException from the {@link UndoGuard} if the undo is refused; the command then stays in the history
      * @throws com.example.student_management.exceptions.NothingToUndoException if the history is empty
      */
     StudentCommand<?> undoLast();
 
     /** Descriptions of the recorded commands, most recent first. */
     List<String> history();
+
+    /** The recorded commands themselves, most recent first (e.g. to run a visitor over them). */
+    List<StudentCommand<?>> commands();
 }

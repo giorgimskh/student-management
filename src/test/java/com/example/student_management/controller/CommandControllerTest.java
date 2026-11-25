@@ -1,5 +1,6 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.command.CommandDescriber;
 import com.example.student_management.command.StudentCommand;
 import com.example.student_management.command.StudentCommandInvoker;
 import com.example.student_management.exceptions.NothingToUndoException;
@@ -24,9 +25,16 @@ class CommandControllerTest {
     @MockitoBean
     private StudentCommandInvoker invoker;
 
+    @MockitoBean
+    private CommandDescriber describer;
+
     @Test
-    void history_returnsDescriptionsMostRecentFirst() throws Exception {
-        when(invoker.history()).thenReturn(List.of("Enroll student 2", "Assign book 1"));
+    void history_returnsDescriberOutputMostRecentFirst() throws Exception {
+        StudentCommand<?> enroll = mock(StudentCommand.class);
+        StudentCommand<?> assign = mock(StudentCommand.class);
+        when(invoker.commands()).thenReturn(List.of(enroll, assign));
+        when(describer.describe(enroll)).thenReturn("Enroll student 2");
+        when(describer.describe(assign)).thenReturn("Assign book 1");
 
         mockMvc.perform(get("/api/commands/history"))
                 .andExpect(status().isOk())
@@ -36,7 +44,7 @@ class CommandControllerTest {
 
     @Test
     void history_whenEmpty_returnsEmptyArray() throws Exception {
-        when(invoker.history()).thenReturn(List.of());
+        when(invoker.commands()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/commands/history"))
                 .andExpect(status().isOk())
@@ -46,7 +54,7 @@ class CommandControllerTest {
     @Test
     void undo_returnsDescriptionOfUndoneCommand() throws Exception {
         StudentCommand<?> command = mock(StudentCommand.class);
-        when(command.description()).thenReturn("Assign book 1 to student 2");
+        when(describer.describe(command)).thenReturn("Assign book 1 to student 2");
         doReturn(command).when(invoker).undoLast();
 
         mockMvc.perform(post("/api/commands/undo"))

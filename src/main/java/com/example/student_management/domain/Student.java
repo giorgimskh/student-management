@@ -3,6 +3,8 @@ package com.example.student_management.domain;
 import com.example.student_management.state.StudentState;
 import com.example.student_management.state.StudentStatus;
 import com.example.student_management.state.StudentTransition;
+import com.example.student_management.visitor.StudentGraphVisitor;
+import com.example.student_management.visitor.Visitable;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,7 +20,7 @@ import java.util.*;
 @ToString
 @EqualsAndHashCode
 @Builder
-public class Student {
+public class Student implements Visitable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -79,5 +81,20 @@ public class Student {
     public void restore(StudentMemento memento) {
         this.name = memento.name();
         this.email = memento.email();
+    }
+
+    /**
+     * Visitor: visits this student, then their books, courses and photo. The
+     * student is visited first, so a visitor can treat the elements that follow
+     * as belonging to them. Collections are lazy, so call this inside a transaction.
+     */
+    @Override
+    public void accept(StudentGraphVisitor visitor) {
+        visitor.visit(this);
+        books.forEach(book -> book.accept(visitor));
+        courses.forEach(course -> course.accept(visitor));
+        if (studentPhoto != null) {
+            studentPhoto.accept(visitor);
+        }
     }
 }

@@ -22,4 +22,9 @@ public record EnrollInCourseCommand(StudentService studentService, UUID studentI
     public String description() {
         return "Enroll student " + studentId + " in course " + courseId;
     }
+
+    @Override
+    public <T> T accept(StudentCommandVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

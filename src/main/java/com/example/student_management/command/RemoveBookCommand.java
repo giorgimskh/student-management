@@ -22,4 +22,9 @@ public record RemoveBookCommand(StudentService studentService, UUID studentId, U
     public String description() {
         return "Remove book " + bookId + " from student " + studentId;
     }
+
+    @Override
+    public <T> T accept(StudentCommandVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

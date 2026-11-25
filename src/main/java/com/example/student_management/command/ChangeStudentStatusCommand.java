@@ -39,4 +39,18 @@ public final class ChangeStudentStatusCommand implements StudentCommand<Student>
     public String description() {
         return transition.name().charAt(0) + transition.name().substring(1).toLowerCase() + " student " + studentId;
     }
+
+    @Override
+    public UUID studentId() {
+        return studentId;
+    }
+
+    public StudentTransition transition() {
+        return transition;
+    }
+
+    @Override
+    public <T> T accept(StudentCommandVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }

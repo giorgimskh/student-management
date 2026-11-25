@@ -22,4 +22,9 @@ public record DropCourseCommand(StudentService studentService, UUID studentId, U
     public String description() {
         return "Drop student " + studentId + " from course " + courseId;
     }
+
+    @Override
+    public <T> T accept(StudentCommandVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }
