@@ -39,7 +39,10 @@
             <div class="panel list-panel">
                 <div class="panel-head">
                     <h2>Students</h2>
-                    <button class="btn btn-primary" data-open="studentDialog">+ New student</button>
+                    <span class="head-actions">
+                        <button class="btn btn-ghost" data-export="students" title="Download all students as CSV">Export CSV</button>
+                        <button class="btn btn-primary" data-open="studentDialog">+ New student</button>
+                    </span>
                 </div>
                 <div class="toolbar">
                     <input id="studentSearch" type="search" placeholder="Search by name…" autocomplete="off">
@@ -69,7 +72,15 @@
         <div class="panel">
             <div class="panel-head">
                 <h2>Books <span id="overdueSummary" class="summary"></span></h2>
-                <button class="btn btn-primary" data-open="bookDialog">+ New book</button>
+                <span class="head-actions">
+                    <button class="btn btn-ghost" data-export="books" title="Download all books as CSV">Export books</button>
+                    <button class="btn btn-ghost" data-export="loans" title="Download the full loan history as CSV">Export loans</button>
+                    <button class="btn btn-primary" data-open="bookDialog">+ New book</button>
+                </span>
+            </div>
+            <div class="policy-bar">
+                <span class="hint" id="policyHint">Overdue policy: …</span>
+                <button class="btn btn-ghost btn-small" id="runOverdueCheck" title="Run the overdue check now instead of waiting for the hourly run">Run overdue check</button>
             </div>
             <table class="table">
                 <thead><tr><th>Title</th><th>ISBN</th><th>Borrowed by</th><th>Due</th><th></th></tr></thead>

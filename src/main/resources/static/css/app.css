@@ -115,6 +115,13 @@ main { max-width: 1240px; margin: 0 auto; padding: 24px 28px 64px; }
 }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .hint { color: var(--muted); font-size: .9rem; margin: 0 0 12px; }
+.head-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.policy-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 10px 14px; margin: -4px 0 14px; border-radius: 10px;
+    background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.policy-bar .hint { margin: 0; color: var(--text); }
 
 /* ---------- Controls ---------- */
 .btn {
