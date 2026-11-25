@@ -4,7 +4,10 @@ import com.example.student_management.filter.CorrelationIdFilter;
 import com.example.student_management.filter.RequestLoggingFilter;
 import com.example.student_management.filter.ResponseTimeFilter;
 import com.example.student_management.filter.SimpleApiKeyFilter;
+import com.example.student_management.security.ApiKeyValidator;
+import com.example.student_management.security.StaticApiKeyValidator;
 import jakarta.servlet.Filter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,8 +32,14 @@ public class AppConfig {
     }
 
     @Bean
-    public FilterRegistrationBean<SimpleApiKeyFilter> simpleApiKeyFilter() {
-        return register(new SimpleApiKeyFilter(), 2);
+    public ApiKeyValidator apiKeyValidator(
+            @Value("${app.security.api-key:" + SimpleApiKeyFilter.DEFAULT_API_KEY + "}") String apiKey) {
+        return new StaticApiKeyValidator(apiKey);
+    }
+
+    @Bean
+    public FilterRegistrationBean<SimpleApiKeyFilter> simpleApiKeyFilter(ApiKeyValidator apiKeyValidator) {
+        return register(new SimpleApiKeyFilter(apiKeyValidator), 2);
     }
 
     @Bean

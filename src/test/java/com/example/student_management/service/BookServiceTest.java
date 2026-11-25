@@ -1,5 +1,6 @@
 package com.example.student_management.service;
 
+import com.example.student_management.service.impl.BookServiceImpl;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.ResourceNotFoundException;
@@ -32,7 +33,7 @@ public class BookServiceTest {
 
     @BeforeEach
     void setUp() {
-        bookService = new BookService(bookRepository);
+        bookService = new BookServiceImpl(bookRepository);
     }
 
     @Test

@@ -1,9 +1,13 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.domain.Course;
+import com.example.student_management.domain.Student;
 import com.example.student_management.dto.CourseRequest;
 import com.example.student_management.dto.CourseResponse;
 import com.example.student_management.dto.PagedResponse;
+import com.example.student_management.dto.StudentRequest;
 import com.example.student_management.dto.StudentResponse;
+import com.example.student_management.mapper.EntityMapper;
 import com.example.student_management.service.CourseService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
@@ -20,24 +24,30 @@ import java.util.UUID;
 public class CourseController {
 
     private final CourseService courseService;
+    private final EntityMapper<Course, CourseRequest, CourseResponse> courseMapper;
+    private final EntityMapper<Student, StudentRequest, StudentResponse> studentMapper;
 
-    public CourseController(CourseService courseService) {
+    public CourseController(CourseService courseService,
+                            EntityMapper<Course, CourseRequest, CourseResponse> courseMapper,
+                            EntityMapper<Student, StudentRequest, StudentResponse> studentMapper) {
         this.courseService = courseService;
+        this.courseMapper = courseMapper;
+        this.studentMapper = studentMapper;
     }
 
     @GetMapping
     public ResponseEntity<PagedResponse<CourseResponse>> getAllCourses(@PageableDefault(size = 10, sort = "courseName") Pageable pageable) {
-        return ResponseEntity.ok(PagedResponse.from(courseService.getAllCourses(pageable).map(CourseResponse::from)));
+        return ResponseEntity.ok(PagedResponse.from(courseService.getAllCourses(pageable).map(courseMapper::toResponse)));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CourseResponse> getCourseById(@PathVariable UUID id) {
-        return ResponseEntity.ok(CourseResponse.from(courseService.getCourseById(id)));
+        return ResponseEntity.ok(courseMapper.toResponse(courseService.getCourseById(id)));
     }
 
     @PostMapping
     public ResponseEntity<CourseResponse> createCourse(@Valid @RequestBody CourseRequest request) {
-        return new ResponseEntity<>(CourseResponse.from(courseService.createCourse(request.toEntity())), HttpStatus.CREATED);
+        return new ResponseEntity<>(courseMapper.toResponse(courseService.createCourse(courseMapper.toEntity(request))), HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
@@ -48,6 +58,6 @@ public class CourseController {
 
     @GetMapping("/{courseId}/students")
     public ResponseEntity<List<StudentResponse>> getStudentsInCourse(@PathVariable UUID courseId) {
-        return ResponseEntity.ok(courseService.getStudentsInCourse(courseId).stream().map(StudentResponse::from).toList());
+        return ResponseEntity.ok(studentMapper.toResponses(courseService.getStudentsInCourse(courseId)));
     }
 }

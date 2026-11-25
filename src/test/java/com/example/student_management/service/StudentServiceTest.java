@@ -1,5 +1,6 @@
 package com.example.student_management.service;
 
+import com.example.student_management.service.impl.StudentServiceImpl;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
@@ -69,7 +70,7 @@ public class StudentServiceTest {
         // Mockito mock here (it's a fixed real instance) — @InjectMocks only
         // wires fields annotated with @Mock/@Spy. This pattern (manual wiring
         // for a mix of mocks + real config values) is very common in real code.
-        studentService = new StudentService(studentRepository, bookRepository, courseRepository, fixedClock, studentPhotoService, eventPublisher);
+        studentService = new StudentServiceImpl(studentRepository, bookRepository, courseRepository, fixedClock, studentPhotoService, eventPublisher);
 
         studentId = UUID.randomUUID();
         student = Student.builder()

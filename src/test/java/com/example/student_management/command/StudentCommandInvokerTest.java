@@ -25,7 +25,7 @@ class StudentCommandInvokerTest {
     @Mock
     private StudentService studentService;
 
-    private final StudentCommandInvoker invoker = new StudentCommandInvoker();
+    private final StudentCommandInvoker invoker = new InMemoryStudentCommandInvoker();
     private final UUID studentId = UUID.randomUUID();
     private final UUID bookId = UUID.randomUUID();
     private final UUID courseId = UUID.randomUUID();
@@ -93,10 +93,10 @@ class StudentCommandInvokerTest {
 
     @Test
     void history_isCapped() {
-        for (int i = 0; i < StudentCommandInvoker.MAX_HISTORY + 3; i++) {
+        for (int i = 0; i < InMemoryStudentCommandInvoker.MAX_HISTORY + 3; i++) {
             invoker.execute(new DropCourseCommand(studentService, studentId, UUID.randomUUID()));
         }
-        assertThat(invoker.history()).hasSize(StudentCommandInvoker.MAX_HISTORY);
+        assertThat(invoker.history()).hasSize(InMemoryStudentCommandInvoker.MAX_HISTORY);
     }
 
     @Test

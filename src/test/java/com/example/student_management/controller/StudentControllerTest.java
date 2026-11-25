@@ -1,6 +1,9 @@
 package com.example.student_management.controller;
 
-import com.example.student_management.command.StudentCommandInvoker;
+import com.example.student_management.command.InMemoryStudentCommandInvoker;
+import com.example.student_management.mapper.BookMapper;
+import com.example.student_management.mapper.CourseMapper;
+import com.example.student_management.mapper.StudentMapper;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.DuplicateEmailException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
@@ -27,7 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(StudentController.class)
-@Import(StudentCommandInvoker.class)
+@Import({InMemoryStudentCommandInvoker.class, StudentMapper.class, BookMapper.class, CourseMapper.class})
 public class StudentControllerTest {
     @Autowired
     private MockMvc mockMvc;
