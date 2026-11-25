@@ -61,6 +61,26 @@ function timeAgo(iso) {
     return date.toLocaleDateString();
 }
 
+const DAY_MS = 86400000;
+
+/** "Due in 3 days" / "Due today" / "Overdue by 2 days" for an open loan. */
+function dueText(loan) {
+    const days = Math.ceil((new Date(loan.dueAt) - Date.now()) / DAY_MS);
+    if (loan.overdue) {
+        const late = Math.max(1, -days);
+        return `Overdue by ${late} day${late === 1 ? "" : "s"}`;
+    }
+    if (days <= 0) return "Due today";
+    return `Due in ${days} day${days === 1 ? "" : "s"}`;
+}
+
+/** A coloured badge for an open loan: red when overdue, amber when due within 3 days. */
+function dueBadge(loan) {
+    const tone = loan.overdue ? "overdue" : (new Date(loan.dueAt) - Date.now() < 3 * DAY_MS ? "due-soon" : "due");
+    const date = new Date(loan.dueAt).toLocaleDateString();
+    return `<span class="badge badge-${tone}" title="Due ${esc(date)}">${esc(dueText(loan))}</span>`;
+}
+
 /** Remembers display names so ids from the server can be shown as names. */
 function rememberNames({ students = [], books = [], courses = [] }) {
     students.forEach(s => state.names.set(s.id, s.name));
@@ -161,14 +181,15 @@ async function loadStudents() {
     const list = $("#studentList");
     if (!list.children.length) list.innerHTML = '<li class="skeleton"></li>'.repeat(4);
     const q = state.studentQuery.trim();
+    const status = state.statusFilter ? `&status=${encodeURIComponent(state.statusFilter)}` : "";
     const path = q
-        ? `/api/students/search?name=${encodeURIComponent(q)}&page=${state.studentPage}&size=${PAGE_SIZE}`
-        : `/api/students?page=${state.studentPage}&size=${PAGE_SIZE}&sort=name`;
+        ? `/api/students/search?name=${encodeURIComponent(q)}&page=${state.studentPage}&size=${PAGE_SIZE}&sort=name${status}`
+        : `/api/students?page=${state.studentPage}&size=${PAGE_SIZE}&sort=name${status}`;
     const page = await attempt(() => api(path));
     if (!page) { list.innerHTML = '<li class="none">Could not load students.</li>'; return; }
 
     rememberNames({ students: page.content });
-    const shown = state.statusFilter ? page.content.filter(s => s.status === state.statusFilter) : page.content;
+    const shown = page.content; // the server already applied the name and status filters
     list.innerHTML = shown.length ? shown.map(s => `
         <li class="row ${s.id === state.selectedId ? "selected" : ""}" data-id="${esc(s.id)}">
             <span class="avatar" data-photo="${esc(s.id)}">${esc(initials(s.name))}</span>
@@ -218,13 +239,15 @@ async function renderStudentDetail() {
     const id = state.selectedId;
     if (!id) return;
 
-    const [student, books, allBooks, allCourses, activity] = await Promise.all([
+    const [student, books, allBooks, allCourses, activity, loans] = await Promise.all([
         attempt(() => api(`/api/students/${id}`)),
         attempt(() => api(`/api/students/${id}/books?size=100`)),
         attempt(() => api(`/api/books?size=100`)),
         attempt(() => api(`/api/courses?size=100`)),
         attempt(() => api(`/api/students/${id}/activity`)),
+        attempt(() => api(`/api/students/${id}/loans`)),
     ]);
+    const openLoanByBook = new Map((loans ?? []).filter(l => !l.returnedAt).map(l => [l.bookId, l]));
     if (!student) { panel.innerHTML = '<div class="empty-state"><p>Student not found.</p></div>'; return; }
     rememberNames({ students: [student], books: allBooks?.content, courses: allCourses?.content });
 
@@ -276,9 +299,12 @@ async function renderStudentDetail() {
 
             <section>
                 <h4 class="section-title">Books <span>${myBooks.length}</span></h4>
-                ${myBooks.length ? `<ul class="chips">${myBooks.map(b => `
-                    <li class="chip">${esc(b.title)} <small>${esc(b.isbn)}</small>
-                        <button title="Give back" data-return-book="${esc(b.id)}">×</button></li>`).join("")}</ul>`
+                ${myBooks.length ? `<ul class="chips">${myBooks.map(b => {
+                    const loan = openLoanByBook.get(b.id);
+                    return `
+                    <li class="chip">${esc(b.title)} ${loan ? dueBadge(loan) : `<small>${esc(b.isbn)}</small>`}
+                        <button title="Give back" data-return-book="${esc(b.id)}">×</button></li>`;
+                }).join("")}</ul>`
                     : '<p class="none">No books borrowed.</p>'}
                 <form class="inline-form" id="assignBookForm">
                     <select name="bookId" ${rules.borrow ? "" : "disabled"}>
@@ -305,6 +331,11 @@ async function renderStudentDetail() {
             </section>
 
             <section>
+                <h4 class="section-title">Loan history <span>${(loans ?? []).length}</span></h4>
+                ${loanHistory(loans ?? [])}
+            </section>
+
+            <section>
                 <h4 class="section-title">Activity</h4>
                 ${activityList(activity ?? [], 6)}
             </section>
@@ -312,6 +343,22 @@ async function renderStudentDetail() {
 
     loadAvatar(student.id);
     bindDetail(student);
+}
+
+function loanHistory(loans) {
+    if (!loans.length) return '<p class="none">Has never borrowed a book.</p>';
+    const day = iso => new Date(iso).toLocaleDateString();
+    return `<table class="table loans">
+        <thead><tr><th>Book</th><th>Borrowed</th><th>Returned</th></tr></thead>
+        <tbody>${loans.slice(0, 10).map(l => `
+            <tr>
+                <td>${esc(l.bookTitle)}</td>
+                <td class="time">${esc(day(l.borrowedAt))}</td>
+                <td>${l.returnedAt
+                    ? `<span class="time">${esc(day(l.returnedAt))}</span>${new Date(l.returnedAt) > new Date(l.dueAt) ? ' <span class="badge badge-due-soon">Late</span>' : ""}`
+                    : dueBadge(l)}</td>
+            </tr>`).join("")}</tbody>
+    </table>`;
 }
 
 function ruleSummary(status, rules) {
@@ -399,21 +446,31 @@ async function loadBooks() {
     if (!page) return;
     rememberNames({ books: page.content });
     if (!page.content.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="none">No books yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="none">No books yet.</td></tr>';
         pager($("#bookPager"), page, () => {});
         return;
     }
-    const owners = await Promise.all(page.content.map(b =>
-        api(`/api/books/${b.id}/owner`).catch(() => null))); // 404 means nobody has it
-    tbody.innerHTML = page.content.map((b, i) => `
+    // One request for every open loan instead of one "owner" request per book.
+    const loans = await attempt(() => api("/api/loans")) ?? [];
+    const loanByBook = new Map(loans.map(l => [l.bookId, l]));
+    const overdue = loans.filter(l => l.overdue).length;
+    $("#overdueSummary").innerHTML = overdue
+        ? `<span class="badge badge-overdue">${overdue} overdue</span>`
+        : loans.length ? `<span class="badge badge-due">${loans.length} on loan, none overdue</span>` : "";
+
+    tbody.innerHTML = page.content.map(b => {
+        const loan = loanByBook.get(b.id);
+        return `
         <tr>
             <td><strong>${esc(b.title)}</strong></td>
             <td class="mono">${esc(b.isbn)}</td>
-            <td>${owners[i]
-                ? `<a href="#" data-goto="${esc(owners[i].id)}">${esc(owners[i].name)}</a>`
+            <td>${loan
+                ? `<a href="#" data-goto="${esc(loan.studentId)}">${esc(loan.studentName)}</a>`
                 : '<span class="badge badge-free">Available</span>'}</td>
+            <td>${loan ? dueBadge(loan) : ""}</td>
             <td><button class="btn btn-danger btn-small" data-delete-book="${esc(b.id)}" data-title="${esc(b.title)}">Delete</button></td>
-        </tr>`).join("");
+        </tr>`;
+    }).join("");
 
     $$("[data-goto]", tbody).forEach(a => a.addEventListener("click", e => { e.preventDefault(); gotoStudent(a.dataset.goto); }));
     $$("[data-delete-book]", tbody).forEach(b => b.addEventListener("click", async () => {
@@ -486,6 +543,7 @@ const EVENT_TEXT = {
     STUDENT_GRADUATED: ["graduated", "grad"],
     STUDENT_WITHDRAWN: ["withdrew", "danger"],
     STUDENT_STATUS_RESTORED: ["had a status change undone", "warn"],
+    BOOK_OVERDUE: ["is late returning {item}", "danger"],
 };
 
 function activityList(events, limit = 50) {
@@ -576,7 +634,7 @@ function init() {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => { state.studentQuery = e.target.value; state.studentPage = 0; loadStudents(); }, 250);
     });
-    $("#statusFilter").addEventListener("change", e => { state.statusFilter = e.target.value; loadStudents(); });
+    $("#statusFilter").addEventListener("change", e => { state.statusFilter = e.target.value; state.studentPage = 0; loadStudents(); });
 
     bindCreateForm("#studentForm", "/api/students",
         f => ({ name: f.get("name"), email: f.get("email") }),
