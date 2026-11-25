@@ -3,6 +3,7 @@ package com.example.student_management.command;
 import com.example.student_management.domain.Student;
 import com.example.student_management.domain.StudentMemento;
 import com.example.student_management.exceptions.BookAlreadyAssignedException;
+import com.example.student_management.exceptions.InvalidStudentStateException;
 import com.example.student_management.exceptions.NothingToUndoException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.service.StudentService;
@@ -116,5 +117,33 @@ class StudentCommandInvokerTest {
         probe.restore(captor.getValue());
         assertThat(probe.getName()).isEqualTo("Nino");
         assertThat(probe.getEmail()).isEqualTo("nino@example.com");
+    }
+
+    @Test
+    void refusedUndo_keepsCommandInHistory_andCanBeRetried() {
+        boolean[] refuse = {true};
+        StudentCommandInvoker guarded = new InMemoryStudentCommandInvoker(command -> {
+            if (refuse[0]) throw new InvalidStudentStateException("suspended");
+        });
+        guarded.execute(new RemoveBookCommand(studentService, studentId, bookId));
+
+        assertThatThrownBy(guarded::undoLast).isInstanceOf(InvalidStudentStateException.class);
+        verify(studentService, never()).assignBookToStudent(studentId, bookId);
+        assertThat(guarded.commands()).hasSize(1);
+
+        refuse[0] = false;
+        guarded.undoLast();
+        verify(studentService).assignBookToStudent(studentId, bookId);
+        assertThat(guarded.commands()).isEmpty();
+    }
+
+    @Test
+    void commands_returnsRecordedCommandsMostRecentFirst() {
+        StudentCommand<?> first = new AssignBookCommand(studentService, studentId, bookId);
+        StudentCommand<?> second = new EnrollInCourseCommand(studentService, studentId, courseId);
+        invoker.execute(first);
+        invoker.execute(second);
+
+        assertThat(invoker.commands()).containsExactly(second, first);
     }
 }

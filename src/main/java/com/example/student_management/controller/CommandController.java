@@ -1,5 +1,6 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.command.CommandDescriber;
 import com.example.student_management.command.StudentCommand;
 import com.example.student_management.command.StudentCommandInvoker;
 import org.springframework.http.ResponseEntity;
@@ -15,19 +16,21 @@ import java.util.Map;
 @RequestMapping("/api/commands")
 public class CommandController {
     private final StudentCommandInvoker invoker;
+    private final CommandDescriber describer;
 
-    public CommandController(StudentCommandInvoker invoker) {
+    public CommandController(StudentCommandInvoker invoker, CommandDescriber describer) {
         this.invoker = invoker;
+        this.describer = describer;
     }
 
     @GetMapping("/history")
     public ResponseEntity<List<String>> getHistory() {
-        return ResponseEntity.ok(invoker.history());
+        return ResponseEntity.ok(invoker.commands().stream().map(describer::describe).toList());
     }
 
     @PostMapping("/undo")
     public ResponseEntity<Map<String, String>> undoLast() {
         StudentCommand<?> undone = invoker.undoLast();
-        return ResponseEntity.ok(Map.of("undone", undone.description()));
+        return ResponseEntity.ok(Map.of("undone", describer.describe(undone)));
     }
 }

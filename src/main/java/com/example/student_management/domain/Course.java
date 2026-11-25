@@ -27,4 +27,14 @@ public class Course {
     @EqualsAndHashCode.Exclude
     @Builder.Default
     private Set<Student> students=new HashSet<>();
+
+    /** "Name (CODE)" for display, or whichever of the two is set; the id if neither is. */
+    public String label() {
+        boolean hasName = courseName != null && !courseName.isBlank();
+        boolean hasCode = code != null && !code.isBlank();
+        if (hasName && hasCode) return courseName + " (" + code + ")";
+        if (hasName) return courseName;
+        if (hasCode) return code;
+        return "course " + id;
+    }
 }

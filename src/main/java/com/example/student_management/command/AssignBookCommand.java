@@ -22,4 +22,9 @@ public record AssignBookCommand(StudentService studentService, UUID studentId, U
     public String description() {
         return "Assign book " + bookId + " to student " + studentId;
     }
+
+    @Override
+    public <T> T accept(StudentCommandVisitor<T> visitor) {
+        return visitor.visit(this);
+    }
 }
