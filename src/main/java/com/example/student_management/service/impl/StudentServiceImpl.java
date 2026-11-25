@@ -11,6 +11,9 @@ import com.example.student_management.event.StudentEventType;
 import com.example.student_management.exceptions.BookAlreadyAssignedException;
 import com.example.student_management.exceptions.DuplicateEmailException;
 import com.example.student_management.exceptions.InvalidEnrollmentException;
+import com.example.student_management.exceptions.InvalidStudentStateException;
+import com.example.student_management.state.StudentStatus;
+import com.example.student_management.state.StudentTransition;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
@@ -84,6 +87,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public Student updateStudent(UUID id, Student studentDetails) {
         Student student = getStudentById(id);
+        ensureAllowed(student, student.getState().canEditProfile(), "have their profile changed");
         ensureEmailAvailable(studentDetails.getEmail(), id);
 
         student.setName(studentDetails.getName());
@@ -101,6 +105,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public Student restoreStudent(UUID id, StudentMemento memento) {
         Student student = getStudentById(id);
+        ensureAllowed(student, student.getState().canEditProfile(), "have their profile changed");
         Student restored = new Student();
         restored.restore(memento);
         ensureEmailAvailable(restored.getEmail(), id);
@@ -109,6 +114,14 @@ public class StudentServiceImpl implements StudentService {
         Student saved = studentRepository.save(student);
         eventPublisher.publish(StudentEventType.STUDENT_UPDATED, id);
         return saved;
+    }
+
+    /** Throws 409 when the student's current state does not allow {@code action}. */
+    private static void ensureAllowed(Student student, boolean allowed, String action) {
+        if (!allowed) {
+            throw new InvalidStudentStateException(
+                    "Student " + student.getId() + " is " + student.getStatus() + " and cannot " + action);
+        }
     }
 
     private void ensureEmailAvailable(String email, UUID ownerId) {
@@ -131,6 +144,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public Student assignBookToStudent(UUID studentId, UUID bookId) {
         Student student = getStudentById(studentId);
+        ensureAllowed(student, student.getState().canBorrowBooks(), "borrow books");
         Book book = findBook(bookId);
 
         if (book.getStudent() != null) {
@@ -173,6 +187,7 @@ public class StudentServiceImpl implements StudentService {
     @Transactional
     public Student enrollInCourse(UUID studentId, UUID courseId) {
         Student student = getStudentById(studentId);
+        ensureAllowed(student, student.getState().canEnroll(), "enroll in courses");
         Course course = findCourse(courseId);
 
         if (course.getStudents().contains(student)) {
@@ -199,6 +214,33 @@ public class StudentServiceImpl implements StudentService {
         course.getStudents().remove(student);
         studentRepository.save(student);
         eventPublisher.publish(StudentEventType.COURSE_DROPPED, studentId, courseId);
+    }
+
+    @Override
+    public Student changeStatus(UUID id, StudentTransition transition) {
+        Student student = getStudentById(id);
+        student.apply(transition); // the current state decides whether this is allowed
+        Student saved = studentRepository.save(student);
+        eventPublisher.publish(eventFor(transition), id);
+        return saved;
+    }
+
+    @Override
+    public Student restoreStatus(UUID id, StudentStatus status) {
+        Student student = getStudentById(id);
+        student.setStatus(status);
+        Student saved = studentRepository.save(student);
+        eventPublisher.publish(StudentEventType.STUDENT_STATUS_RESTORED, id);
+        return saved;
+    }
+
+    private static StudentEventType eventFor(StudentTransition transition) {
+        return switch (transition) {
+            case SUSPEND -> StudentEventType.STUDENT_SUSPENDED;
+            case REACTIVATE -> StudentEventType.STUDENT_REACTIVATED;
+            case GRADUATE -> StudentEventType.STUDENT_GRADUATED;
+            case WITHDRAW -> StudentEventType.STUDENT_WITHDRAWN;
+        };
     }
 
     @Override

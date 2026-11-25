@@ -1,6 +1,7 @@
 package com.example.student_management.dto;
 
 import com.example.student_management.domain.Student;
+import com.example.student_management.state.StudentStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -11,6 +12,7 @@ public record StudentResponse(
         String name,
         String email,
         Instant createdAt,
+        StudentStatus status,
         List<BookResponse> books,
         List<CourseResponse> courses
 ) {
@@ -20,6 +22,7 @@ public record StudentResponse(
                 student.getName(),
                 student.getEmail(),
                 student.getCreatedAt(),
+                student.getStatus(),
                 student.getBooks().stream().map(BookResponse::from).toList(),
                 student.getCourses().stream().map(CourseResponse::from).toList()
         );

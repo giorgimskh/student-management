@@ -40,6 +40,11 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(InvalidStudentStateException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidStudentState(InvalidStudentStateException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(BookAlreadyAssignedException.class)
     public ResponseEntity<Map<String, String>> handleBookAlreadyAssigned(BookAlreadyAssignedException ex) {
         return buildErrorResponse(ex.getMessage(), HttpStatus.CONFLICT);

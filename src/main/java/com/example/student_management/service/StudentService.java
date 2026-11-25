@@ -4,6 +4,8 @@ import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
 import com.example.student_management.domain.StudentMemento;
+import com.example.student_management.state.StudentStatus;
+import com.example.student_management.state.StudentTransition;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -46,4 +48,16 @@ public interface StudentService {
     Set<Course> getCoursesByStudent(UUID studentId);
 
     void removeStudentFromCourse(UUID studentId, UUID courseId);
+
+    /**
+     * Moves the student to a new status. Fails with 409 if the current status
+     * does not allow {@code transition}.
+     */
+    Student changeStatus(UUID id, StudentTransition transition);
+
+    /**
+     * Puts the student back to {@code status} without checking transition rules.
+     * Used to undo {@link #changeStatus}, e.g. GRADUATED back to ACTIVE.
+     */
+    Student restoreStatus(UUID id, StudentStatus status);
 }
