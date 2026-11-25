@@ -6,17 +6,19 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
+import com.example.student_management.TestcontainersConfiguration;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.context.annotation.Import;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 
-@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // use the Testcontainers Postgres
 @DataJpaTest
+@Import(TestcontainersConfiguration.class)
 public class StudentRepositoryTest {
     @Autowired
     private StudentRepository studentRepository;

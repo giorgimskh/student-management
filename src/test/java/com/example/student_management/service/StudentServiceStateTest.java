@@ -46,6 +46,9 @@ class StudentServiceStateTest {
     @Mock
     private StudentEventPublisher eventPublisher;
 
+    @Mock
+    private LoanService loanService;
+
     private StudentService studentService;
     private UUID studentId;
     private Student student;
@@ -53,7 +56,7 @@ class StudentServiceStateTest {
     @BeforeEach
     void setUp() {
         studentService = new StudentServiceImpl(studentRepository, bookRepository, courseRepository,
-                Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC), studentPhotoService, eventPublisher);
+                Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC), studentPhotoService, eventPublisher, loanService);
         studentId = UUID.randomUUID();
         student = Student.builder().id(studentId).name("Nino").email("nino@example.com").build();
         when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));

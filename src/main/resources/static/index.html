@@ -68,11 +68,11 @@
     <section id="view-books" class="view">
         <div class="panel">
             <div class="panel-head">
-                <h2>Books</h2>
+                <h2>Books <span id="overdueSummary" class="summary"></span></h2>
                 <button class="btn btn-primary" data-open="bookDialog">+ New book</button>
             </div>
             <table class="table">
-                <thead><tr><th>Title</th><th>ISBN</th><th>Borrowed by</th><th></th></tr></thead>
+                <thead><tr><th>Title</th><th>ISBN</th><th>Borrowed by</th><th>Due</th><th></th></tr></thead>
                 <tbody id="bookTable"></tbody>
             </table>
             <div class="pager" id="bookPager"></div>

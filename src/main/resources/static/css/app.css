@@ -193,6 +193,13 @@ label input { color: var(--text); font-weight: 400; }
 .badge-GRADUATED { color: var(--graduated); background: var(--graduated-bg); }
 .badge-WITHDRAWN { color: var(--withdrawn); background: var(--withdrawn-bg); }
 .badge-free { color: var(--active); background: var(--active-bg); }
+/* Loan due dates: neutral teal, amber when due within 3 days, red when overdue */
+.badge-due { color: var(--primary); background: var(--primary-soft); }
+.badge-due-soon { color: var(--suspended); background: var(--suspended-bg); }
+.badge-overdue { color: var(--danger); background: var(--danger-soft); }
+.summary { margin-left: 8px; vertical-align: middle; font-weight: 400; }
+.table.loans td, .table.loans th { padding: 7px 8px; }
+.table.loans td:last-child { text-align: left; }
 
 /* ---------- Student detail ---------- */
 .detail-panel { min-height: 420px; padding: 0; overflow: hidden; }

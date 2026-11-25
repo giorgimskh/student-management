@@ -1,5 +1,6 @@
 package com.example.student_management.service.impl;
 
+import com.example.student_management.service.LoanService;
 import com.example.student_management.service.StudentPhotoService;
 import com.example.student_management.service.StudentService;
 import com.example.student_management.domain.Book;
@@ -41,14 +42,16 @@ public class StudentServiceImpl implements StudentService {
     private final Clock clock;
     private final StudentPhotoService studentPhotoService;
     private final StudentEventPublisher eventPublisher;
+    private final LoanService loanService;
 
-    public StudentServiceImpl(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository, Clock clock, StudentPhotoService studentPhotoService, StudentEventPublisher eventPublisher) {
+    public StudentServiceImpl(StudentRepository studentRepository, BookRepository bookRepository, CourseRepository courseRepository, Clock clock, StudentPhotoService studentPhotoService, StudentEventPublisher eventPublisher, LoanService loanService) {
         this.studentRepository = studentRepository;
         this.bookRepository = bookRepository;
         this.courseRepository = courseRepository;
         this.clock = clock;
         this.studentPhotoService = studentPhotoService;
         this.eventPublisher = eventPublisher;
+        this.loanService = loanService;
     }
 
     @PostConstruct
@@ -142,6 +145,7 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
+    @Transactional // the book and its loan are saved together
     public Student assignBookToStudent(UUID studentId, UUID bookId) {
         Student student = getStudentById(studentId);
         ensureAllowed(student, student.getState().canBorrowBooks(), "borrow books");
@@ -154,6 +158,7 @@ public class StudentServiceImpl implements StudentService {
         book.setStudent(student);
         student.getBooks().add(book);
         bookRepository.save(book);
+        loanService.openLoan(book, student);
         eventPublisher.publish(StudentEventType.BOOK_ASSIGNED, studentId, bookId);
         return student;
     }
@@ -170,6 +175,7 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
+    @Transactional // the book and its loan are saved together
     public void removeBookFromStudent(UUID studentId, UUID bookId) {
         getStudentById(studentId);
         Book book = findBook(bookId);
@@ -180,6 +186,7 @@ public class StudentServiceImpl implements StudentService {
 
         book.setStudent(null);
         bookRepository.save(book);
+        loanService.closeLoan(bookId);
         eventPublisher.publish(StudentEventType.BOOK_REMOVED, studentId, bookId);
     }
 
@@ -246,6 +253,21 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public Page<Student> searchStudents(String name, Pageable pageable) {
         return studentRepository.findByNameContainingIgnoreCase(name, pageable);
+    }
+
+    @Override
+    public Page<Student> findStudents(String name, StudentStatus status, Pageable pageable) {
+        boolean byName = name != null && !name.isBlank();
+        if (byName && status != null) {
+            return studentRepository.findByNameContainingIgnoreCaseAndStatus(name.trim(), status, pageable);
+        }
+        if (byName) {
+            return studentRepository.findByNameContainingIgnoreCase(name.trim(), pageable);
+        }
+        if (status != null) {
+            return studentRepository.findByStatus(status, pageable);
+        }
+        return studentRepository.findAll(pageable);
     }
 
     private Book findBook(UUID bookId) {

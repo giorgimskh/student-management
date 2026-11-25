@@ -13,5 +13,7 @@ public enum StudentEventType {
     STUDENT_GRADUATED,
     STUDENT_WITHDRAWN,
     /** An undo put the student back to an earlier status. */
-    STUDENT_STATUS_RESTORED
+    STUDENT_STATUS_RESTORED,
+    /** A borrowed book passed its due date ({@code relatedId} is the book). */
+    BOOK_OVERDUE
 }
