@@ -21,6 +21,12 @@ public interface StudentService {
 
     Page<Student> searchStudents(String name, Pageable pageable);
 
+    /**
+     * Students filtered by name (contains, ignoring case) and/or status. Either
+     * filter may be null or blank, in which case it is not applied.
+     */
+    Page<Student> findStudents(String name, StudentStatus status, Pageable pageable);
+
     Student createStudent(Student student);
 
     Student getStudentById(UUID id);

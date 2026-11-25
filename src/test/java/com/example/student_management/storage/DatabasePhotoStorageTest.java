@@ -7,7 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
+import com.example.student_management.TestcontainersConfiguration;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
@@ -17,9 +17,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE) // use the Testcontainers Postgres
 @DataJpaTest
-@Import(DatabasePhotoStorage.class)
+@Import({DatabasePhotoStorage.class, TestcontainersConfiguration.class})
 class DatabasePhotoStorageTest {
     private static final Instant FIRST_UPLOAD = Instant.parse("2026-01-01T00:00:00Z");
     private static final Instant SECOND_UPLOAD = Instant.parse("2026-02-01T00:00:00Z");
@@ -46,9 +46,6 @@ class DatabasePhotoStorageTest {
         byte[] data = {1, 2, 3, 4};
 
         StudentPhoto saved = photoStorage.save(student, "me.png", "image/png", data, FIRST_UPLOAD);
-        // Checked before the reload: the tests run PostgreSQLDialect against H2, which shifts
-        // "timestamp with time zone" values by the JVM's UTC offset on the way back.
-        assertThat(saved.getUploadedAt()).isEqualTo(FIRST_UPLOAD);
         entityManager.flush();
         entityManager.clear();
 
@@ -58,7 +55,7 @@ class DatabasePhotoStorageTest {
         assertThat(loaded.getContentType()).isEqualTo("image/png");
         assertThat(loaded.getData()).containsExactly(1, 2, 3, 4);
         assertThat(loaded.getSizeBytes()).isEqualTo(4);
-        assertThat(loaded.getUploadedAt()).isNotNull();
+        assertThat(loaded.getUploadedAt()).isEqualTo(FIRST_UPLOAD); // exact round trip on real Postgres
     }
 
     @Test
@@ -67,7 +64,6 @@ class DatabasePhotoStorageTest {
         entityManager.flush();
 
         StudentPhoto second = photoStorage.save(student, "new.jpg", "image/jpeg", new byte[]{9, 9}, SECOND_UPLOAD);
-        assertThat(second.getUploadedAt()).isEqualTo(SECOND_UPLOAD);
         entityManager.flush();
         entityManager.clear();
 
@@ -77,7 +73,7 @@ class DatabasePhotoStorageTest {
         assertThat(loaded.getOriginalFilename()).isEqualTo("new.jpg");
         assertThat(loaded.getContentType()).isEqualTo("image/jpeg");
         assertThat(loaded.getSizeBytes()).isEqualTo(2);
-        assertThat(loaded.getUploadedAt()).isAfter(FIRST_UPLOAD); // updated, not left at the first upload
+        assertThat(loaded.getUploadedAt()).isEqualTo(SECOND_UPLOAD);
     }
 
     @Test

@@ -1,27 +1,37 @@
 package com.example.student_management.repository;
 
+import com.example.student_management.TestcontainersConfiguration;
 import com.example.student_management.domain.Student;
 import com.example.student_management.state.StudentStatus;
 import com.example.student_management.state.StudentTransition;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
-import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(TestcontainersConfiguration.class)
 class StudentStatusPersistenceTest {
     @Autowired
     private StudentRepository studentRepository;
 
     @Autowired
     private TestEntityManager entityManager;
+
+    private UUID persist(String name, StudentStatus status) {
+        return entityManager.persistFlushFind(Student.builder()
+                .name(name).email(name.toLowerCase() + "@example.com").status(status).build()).getId();
+    }
 
     @Test
     void statusIsStoredByNameAndReadBack() {
@@ -39,18 +49,28 @@ class StudentStatusPersistenceTest {
     }
 
     @Test
-    void rowWithoutStatus_isReadAsActive() {
-        UUID id = entityManager.persistFlushFind(
-                Student.builder().name("Old").email("old@example.com").build()).getId();
-        entityManager.getEntityManager()
+    void statusColumnIsRequired() {
+        UUID id = persist("Old", StudentStatus.ACTIVE);
+
+        assertThatThrownBy(() -> entityManager.getEntityManager()
                 .createNativeQuery("update students set status = null where id = :id")
                 .setParameter("id", id)
-                .executeUpdate();
-        entityManager.clear();
+                .executeUpdate())
+                .hasMessageContaining("null value in column \"status\"");
+    }
 
-        Student loaded = studentRepository.findById(id).orElseThrow();
+    @Test
+    void findByStatus_andByNameAndStatus() {
+        persist("Ana", StudentStatus.ACTIVE);
+        persist("Anano", StudentStatus.SUSPENDED);
+        persist("Beka", StudentStatus.SUSPENDED);
+        PageRequest byName = PageRequest.of(0, 10, Sort.by("name"));
 
-        assertThat(loaded.getStatus()).isEqualTo(StudentStatus.ACTIVE);
-        assertThat(loaded.getState().canEnroll()).isTrue();
+        assertThat(studentRepository.findByStatus(StudentStatus.SUSPENDED, byName))
+                .extracting(Student::getName).containsExactly("Anano", "Beka");
+        assertThat(studentRepository.findByNameContainingIgnoreCaseAndStatus("ana", StudentStatus.SUSPENDED, byName))
+                .extracting(Student::getName).containsExactly("Anano");
+        assertThat(studentRepository.findByNameContainingIgnoreCaseAndStatus("ana", StudentStatus.GRADUATED, byName))
+                .isEmpty();
     }
 }

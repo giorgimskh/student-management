@@ -19,7 +19,9 @@ import com.example.student_management.dto.StudentRequest;
 import com.example.student_management.dto.StudentResponse;
 import com.example.student_management.mapper.EntityMapper;
 import com.example.student_management.service.StudentService;
+import com.example.student_management.state.StudentStatus;
 import com.example.student_management.state.StudentTransition;
+import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -51,15 +53,24 @@ public class StudentController {
     }
 
     @GetMapping
-    public ResponseEntity<PagedResponse<StudentResponse>> getAllStudents(@PageableDefault(size = 10, sort = "name") Pageable pageable) {
-        return ResponseEntity.ok(PagedResponse.from(studentService.getAllStudents(pageable).map(studentMapper::toResponse)));
+    public ResponseEntity<PagedResponse<StudentResponse>> getAllStudents(
+            @RequestParam(required = false) StudentStatus status,
+            @PageableDefault(size = 10, sort = "name") Pageable pageable) {
+        Page<Student> page = status == null
+                ? studentService.getAllStudents(pageable)
+                : studentService.findStudents(null, status, pageable);
+        return ResponseEntity.ok(PagedResponse.from(page.map(studentMapper::toResponse)));
     }
 
     @GetMapping("/search")
     public ResponseEntity<PagedResponse<StudentResponse>> searchStudents(
             @RequestParam String name,
+            @RequestParam(required = false) StudentStatus status,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(PagedResponse.from(studentService.searchStudents(name, pageable).map(studentMapper::toResponse)));
+        Page<Student> page = status == null
+                ? studentService.searchStudents(name, pageable)
+                : studentService.findStudents(name, status, pageable);
+        return ResponseEntity.ok(PagedResponse.from(page.map(studentMapper::toResponse)));
     }
 
     @GetMapping("/{id}")

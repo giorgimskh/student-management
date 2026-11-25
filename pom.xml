@@ -29,11 +29,6 @@
 	<properties>
 		<java.version>25</java.version>
 		<lombok.version>1.18.42</lombok.version>
-		<!-- H2 2.4.240 breaks CHECK constraints (e.g. the one Hibernate adds for enum
-		     columns) once the connection that created the table is closed:
-		     "Check constraint invalid: CONSTRAINT_n". 2.3.232 does not have this bug.
-		     H2 is test-only here; production uses Postgres. -->
-		<h2.version>2.3.232</h2.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -49,6 +44,15 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<!-- Schema changes are Flyway migrations in src/main/resources/db/migration -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -74,10 +78,21 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Database tests run against a real Postgres in Docker (Testcontainers) -->
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>test</scope> <!-- Remove this line if you want to use H2 for local dev too -->
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springdoc</groupId>
