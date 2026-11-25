@@ -30,6 +30,43 @@ class StudentEventPublisherTest {
     }
 
     @Test
+    void twoArgPublish_sendsEventWithoutRelatedIdStampedByClock() {
+        List<StudentEvent> received = new ArrayList<>();
+        StudentEventPublisher publisher = new InMemoryStudentEventPublisher(List.of(received::add), clock);
+        UUID studentId = UUID.randomUUID();
+
+        publisher.publish(StudentEventType.STUDENT_CREATED, studentId);
+
+        assertThat(received).containsExactly(
+                new StudentEvent(StudentEventType.STUDENT_CREATED, studentId, null, clock.instant()));
+    }
+
+    @Test
+    void publishEvent_deliversItUnchanged() {
+        List<StudentEvent> received = new ArrayList<>();
+        StudentEventPublisher publisher = new InMemoryStudentEventPublisher(List.of(received::add), clock);
+        StudentEvent event = new StudentEvent(StudentEventType.BOOK_ASSIGNED, UUID.randomUUID(), UUID.randomUUID(),
+                Instant.parse("2020-05-05T10:00:00Z"));
+
+        publisher.publish(event);
+
+        assertThat(received).containsExactly(event);
+    }
+
+    @Test
+    void subscribingTheSameListenerTwice_notifiesItOnce() {
+        List<StudentEvent> received = new ArrayList<>();
+        StudentEventListener listener = received::add;
+        StudentEventPublisher publisher = new InMemoryStudentEventPublisher(List.of(), clock);
+
+        publisher.subscribe(listener);
+        publisher.subscribe(listener);
+        publisher.publish(StudentEventType.STUDENT_UPDATED, UUID.randomUUID());
+
+        assertThat(received).hasSize(1);
+    }
+
+    @Test
     void unsubscribedListener_isNoLongerNotified() {
         List<StudentEvent> received = new ArrayList<>();
         StudentEventListener listener = received::add;
