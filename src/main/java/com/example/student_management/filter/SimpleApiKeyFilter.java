@@ -1,5 +1,7 @@
 package com.example.student_management.filter;
 
+import com.example.student_management.security.ApiKeyValidator;
+import com.example.student_management.security.StaticApiKeyValidator;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -8,7 +10,18 @@ import java.io.IOException;
 
 public class SimpleApiKeyFilter implements Filter {
     private static final String API_KEY_HEADER = "X-Api-Key";
-    private static final String EXPECTED_API_KEY = "my-secret-key";
+    public static final String DEFAULT_API_KEY = "my-secret-key";
+
+    private final ApiKeyValidator apiKeyValidator;
+
+    /** Accepts only {@link #DEFAULT_API_KEY}. */
+    public SimpleApiKeyFilter() {
+        this(new StaticApiKeyValidator(DEFAULT_API_KEY));
+    }
+
+    public SimpleApiKeyFilter(ApiKeyValidator apiKeyValidator) {
+        this.apiKeyValidator = apiKeyValidator;
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
@@ -23,7 +36,7 @@ public class SimpleApiKeyFilter implements Filter {
 
         String apiKey=httpServletRequest.getHeader(API_KEY_HEADER);
 
-        if(EXPECTED_API_KEY.equals(apiKey)){
+        if(apiKeyValidator.isValid(apiKey)){
             chain.doFilter(request,response);
         }else{
             httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

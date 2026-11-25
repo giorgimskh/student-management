@@ -2,53 +2,24 @@ package com.example.student_management.service;
 
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
-import com.example.student_management.exceptions.ResourceNotFoundException;
-import com.example.student_management.repository.CourseRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-@Service
-public class CourseService {
-    private final CourseRepository courseRepository;
+/** Business operations on courses. */
+public interface CourseService {
+    List<Course> getAllCourses();
 
-    public CourseService(CourseRepository courseRepository) {
-        this.courseRepository = courseRepository;
-    }
+    Page<Course> getAllCourses(Pageable pageable);
 
-    public List<Course> getAllCourses() {
-        return courseRepository.findAll();
-    }
+    Course getCourseById(UUID id);
 
-    public Page<Course> getAllCourses(Pageable pageable) {
-        return courseRepository.findAll(pageable);
-    }
+    Course createCourse(Course course);
 
-    public Course getCourseById(UUID id) {
-        return courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
-    }
+    void deleteCourse(UUID id);
 
-    public Course createCourse(Course course) {
-        return courseRepository.save(course);
-    }
-
-    public void deleteCourse(UUID id) {
-        Course course = getCourseById(id);
-
-        for (Student student : course.getStudents()) {
-            student.getCourses().remove(course);
-        }
-
-        course.getStudents().clear();
-        courseRepository.delete(course);
-    }
-
-    public Set<Student> getStudentsInCourse(UUID courseId) {
-        return getCourseById(courseId).getStudents();
-    }
+    Set<Student> getStudentsInCourse(UUID courseId);
 }

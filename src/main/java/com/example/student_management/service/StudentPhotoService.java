@@ -1,96 +1,21 @@
 package com.example.student_management.service;
 
-import com.example.student_management.domain.Student;
 import com.example.student_management.domain.StudentPhoto;
 import com.example.student_management.dto.PhotoResponseDto;
-import com.example.student_management.exceptions.InvalidPhotoException;
-import com.example.student_management.exceptions.ResourceNotFoundException;
-import com.example.student_management.repository.StudentPhotoRepository;
-import com.example.student_management.repository.StudentRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.time.Clock;
-import java.time.Instant;
 import java.util.UUID;
 
-@Service
-@Transactional
-public class StudentPhotoService {
-    private final StudentPhotoRepository studentPhotoRepository;
-    private final StudentRepository studentRepository;
-    private final Clock clock;
+/** Upload, download and removal of a student's profile photo. */
+public interface StudentPhotoService {
+    /** Validates the upload and stores it, replacing any existing photo. */
+    StudentPhoto storePhoto(UUID studentId, MultipartFile file);
 
-    public StudentPhotoService(StudentPhotoRepository studentPhotoRepository, StudentRepository studentRepository, Clock clock) {
-        this.studentPhotoRepository = studentPhotoRepository;
-        this.studentRepository = studentRepository;
-        this.clock = clock;
-    }
+    PhotoResponseDto getPhoto(UUID studentId);
 
-    public StudentPhoto storePhoto(UUID studentId, MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new InvalidPhotoException("Photo file must not be empty");
-        }
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new InvalidPhotoException("Photo must be an image (got content type: " + contentType + ")");
-        }
+    /** Deletes the photo; 404 if the student or the photo does not exist. */
+    void deletePhoto(UUID studentId);
 
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> studentNotFound(studentId));
-
-        StudentPhoto photo = studentPhotoRepository.findByStudentId(studentId)
-                .orElseGet(() -> {
-                    StudentPhoto newPhoto = new StudentPhoto();
-                    newPhoto.setStudent(student);
-                    return newPhoto;
-                });
-
-        try {
-            photo.setOriginalFilename(file.getOriginalFilename());
-            photo.setContentType(file.getContentType());
-            photo.setData(file.getBytes());
-            photo.setSizeBytes(file.getSize());
-            photo.setUploadedAt(Instant.now(clock));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to upload photo for student id: " + studentId, e);
-        }
-
-        return studentPhotoRepository.save(photo);
-    }
-
-    public PhotoResponseDto getPhoto(UUID studentId) {
-        StudentPhoto studentPhoto = findExistingPhoto(studentId);
-
-        return new PhotoResponseDto(
-                new ByteArrayResource(studentPhoto.getData()),
-                studentPhoto.getContentType(),
-                studentPhoto.getOriginalFilename()
-        );
-    }
-
-    public void deletePhoto(UUID studentId) {
-        studentPhotoRepository.delete(findExistingPhoto(studentId));
-    }
-
-    public void deletePhotoIfExists(UUID studentId) {
-        studentPhotoRepository.findByStudentId(studentId)
-                .ifPresent(studentPhotoRepository::delete);
-    }
-
-    private StudentPhoto findExistingPhoto(UUID studentId) {
-        if (!studentRepository.existsById(studentId)) {
-            throw studentNotFound(studentId);
-        }
-
-        return studentPhotoRepository.findByStudentId(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Photo not found for student id: " + studentId));
-    }
-
-    private static ResourceNotFoundException studentNotFound(UUID studentId) {
-        return new ResourceNotFoundException("Student not found with id: " + studentId);
-    }
+    /** Deletes the photo if there is one; never fails because it is missing. */
+    void deletePhotoIfExists(UUID studentId);
 }

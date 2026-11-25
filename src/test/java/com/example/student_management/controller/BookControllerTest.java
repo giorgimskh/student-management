@@ -1,5 +1,8 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.mapper.BookMapper;
+import com.example.student_management.mapper.StudentMapper;
+import org.springframework.context.annotation.Import;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.ResourceNotFoundException;
@@ -26,6 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(BookController.class)
+@Import({BookMapper.class, StudentMapper.class})
 public class BookControllerTest {
     @Autowired
     MockMvc mockMvc;

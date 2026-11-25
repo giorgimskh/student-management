@@ -18,7 +18,7 @@ class StudentEventPublisherTest {
     void publish_notifiesEveryRegisteredListener() {
         List<StudentEvent> first = new ArrayList<>();
         List<StudentEvent> second = new ArrayList<>();
-        StudentEventPublisher publisher = new StudentEventPublisher(List.of(first::add, second::add), clock);
+        StudentEventPublisher publisher = new InMemoryStudentEventPublisher(List.of(first::add, second::add), clock);
 
         UUID studentId = UUID.randomUUID();
         UUID courseId = UUID.randomUUID();
@@ -33,7 +33,7 @@ class StudentEventPublisherTest {
     void unsubscribedListener_isNoLongerNotified() {
         List<StudentEvent> received = new ArrayList<>();
         StudentEventListener listener = received::add;
-        StudentEventPublisher publisher = new StudentEventPublisher(List.of(), clock);
+        StudentEventPublisher publisher = new InMemoryStudentEventPublisher(List.of(), clock);
 
         publisher.subscribe(listener);
         publisher.publish(StudentEventType.STUDENT_CREATED, UUID.randomUUID());
@@ -47,7 +47,7 @@ class StudentEventPublisherTest {
     void failingListener_doesNotStopOtherListeners() {
         List<StudentEvent> received = new ArrayList<>();
         StudentEventListener failing = event -> { throw new IllegalStateException("boom"); };
-        StudentEventPublisher publisher = new StudentEventPublisher(List.of(failing, received::add), clock);
+        StudentEventPublisher publisher = new InMemoryStudentEventPublisher(List.of(failing, received::add), clock);
 
         publisher.publish(StudentEventType.STUDENT_CREATED, UUID.randomUUID());
 
@@ -57,7 +57,7 @@ class StudentEventPublisherTest {
     @Test
     void activityLog_keepsMostRecentFirst_andCapsSize() {
         StudentActivityLog log = new StudentActivityLog();
-        StudentEventPublisher publisher = new StudentEventPublisher(List.of(log), clock);
+        StudentEventPublisher publisher = new InMemoryStudentEventPublisher(List.of(log), clock);
         UUID studentId = UUID.randomUUID();
 
         for (int i = 0; i < StudentActivityLog.CAPACITY + 5; i++) {
