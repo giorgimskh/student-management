@@ -24,4 +24,8 @@ public interface BookLoanRepository extends JpaRepository<BookLoan, UUID> {
     List<BookLoan> findByReturnedAtIsNullAndDueAtBeforeAndOverdueNotifiedAtIsNull(Instant now);
 
     Optional<BookLoan> findFirstByBookIdAndReturnedAtIsNull(UUID bookId);
+
+    /** Every loan, newest first (CSV export). */
+    @EntityGraph(attributePaths = {"book", "student"})
+    List<BookLoan> findAllByOrderByBorrowedAtDesc();
 }

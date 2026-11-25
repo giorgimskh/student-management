@@ -2,7 +2,9 @@ package com.example.student_management.controller;
 
 import com.example.student_management.domain.BookLoan;
 import com.example.student_management.dto.LoanResponse;
+import com.example.student_management.policy.OverduePolicy;
 import com.example.student_management.service.LoanService;
+import com.example.student_management.service.OverdueLoanJob;
 import com.example.student_management.service.StudentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,11 +27,13 @@ public class LoanController {
     private final LoanService loanService;
     private final StudentService studentService;
     private final Clock clock;
+    private final OverdueLoanJob overdueLoanJob;
 
-    public LoanController(LoanService loanService, StudentService studentService, Clock clock) {
+    public LoanController(LoanService loanService, StudentService studentService, Clock clock, OverdueLoanJob overdueLoanJob) {
         this.loanService = loanService;
         this.studentService = studentService;
         this.clock = clock;
+        this.overdueLoanJob = overdueLoanJob;
     }
 
     /** Books currently borrowed ({@code ?filter=ACTIVE}, the default) or only the overdue ones. */
@@ -46,10 +50,17 @@ public class LoanController {
         return ResponseEntity.ok(toResponses(loanService.loansForStudent(studentId)));
     }
 
-    /** Runs the overdue check now instead of waiting for the schedule. */
+    /** Runs the overdue check (reporting plus the active policy) now instead of waiting for the schedule. */
     @PostMapping("/api/loans/overdue-check")
-    public ResponseEntity<Map<String, Integer>> runOverdueCheck() {
-        return ResponseEntity.ok(Map.of("newlyOverdue", loanService.reportNewlyOverdueLoans()));
+    public ResponseEntity<OverdueLoanJob.Result> runOverdueCheck() {
+        return ResponseEntity.ok(overdueLoanJob.runCheck());
+    }
+
+    /** Which overdue policy (Strategy) is active, for display. */
+    @GetMapping("/api/loans/policy")
+    public ResponseEntity<Map<String, String>> getOverduePolicy() {
+        OverduePolicy policy = overdueLoanJob.policy();
+        return ResponseEntity.ok(Map.of("name", policy.name(), "description", policy.description()));
     }
 
     private List<LoanResponse> toResponses(List<BookLoan> loans) {

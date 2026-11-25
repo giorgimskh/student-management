@@ -4,7 +4,9 @@ import com.example.student_management.domain.Book;
 import com.example.student_management.domain.BookLoan;
 import com.example.student_management.domain.Student;
 import com.example.student_management.exceptions.ResourceNotFoundException;
+import com.example.student_management.policy.NotifyOnlyPolicy;
 import com.example.student_management.service.LoanService;
+import com.example.student_management.service.OverdueLoanJob;
 import com.example.student_management.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,9 @@ class LoanControllerTest {
 
     @MockitoBean
     private StudentService studentService;
+
+    @MockitoBean
+    private OverdueLoanJob overdueLoanJob;
 
     private static BookLoan loan(String title, Instant dueAt) {
         return BookLoan.builder().id(UUID.randomUUID())
@@ -97,11 +102,24 @@ class LoanControllerTest {
     }
 
     @Test
-    void overdueCheck_canBeTriggeredByHand() throws Exception {
-        when(loanService.reportNewlyOverdueLoans()).thenReturn(3);
+    void overdueCheck_canBeTriggeredByHand_andReportsPolicyActions() throws Exception {
+        when(overdueLoanJob.runCheck()).thenReturn(
+                new OverdueLoanJob.Result(3, "suspend", List.of("Suspended Nino: \"Late\" is overdue")));
 
         mockMvc.perform(post("/api/loans/overdue-check"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.newlyOverdue").value(3));
+                .andExpect(jsonPath("$.newlyOverdue").value(3))
+                .andExpect(jsonPath("$.policy").value("suspend"))
+                .andExpect(jsonPath("$.actions[0]").value("Suspended Nino: \"Late\" is overdue"));
+    }
+
+    @Test
+    void policyEndpoint_describesTheActiveStrategy() throws Exception {
+        when(overdueLoanJob.policy()).thenReturn(new NotifyOnlyPolicy());
+
+        mockMvc.perform(get("/api/loans/policy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("notify"))
+                .andExpect(jsonPath("$.description").value("Overdue books are reported in the activity feed."));
     }
 }

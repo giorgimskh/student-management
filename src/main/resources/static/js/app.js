@@ -440,7 +440,36 @@ function bindDetail(student) {
 
 /* ---------- Books ---------- */
 
+async function loadPolicy() {
+    const policy = await attempt(() => api("/api/loans/policy"));
+    if (policy) $("#policyHint").innerHTML = `Overdue policy: <strong>${esc(policy.name)}</strong>. ${esc(policy.description)}`;
+}
+
+async function runOverdueCheck() {
+    const result = await attempt(() => api("/api/loans/overdue-check", { method: "POST" }));
+    if (!result) return;
+    const parts = [`${result.newlyOverdue} newly overdue`];
+    if (result.actions.length) parts.push(...result.actions);
+    else parts.push(`policy "${result.policy}" took no action`);
+    toast(parts.join(" · "));
+    loadBooks();
+}
+
+/** Downloads a CSV export. A plain link can't send the API key header, so fetch it and save the blob. */
+async function downloadExport(type) {
+    const res = await attempt(() => api(`/api/export/${encodeURIComponent(type)}.csv`, { raw: true }));
+    if (!res) return;
+    const url = URL.createObjectURL(await res.blob());
+    const link = Object.assign(document.createElement("a"), { href: url, download: `${type}.csv` });
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(`Downloaded ${type}.csv`);
+}
+
 async function loadBooks() {
+    loadPolicy();
     const tbody = $("#bookTable");
     const page = await attempt(() => api(`/api/books?page=${state.bookPage}&size=${PAGE_SIZE}&sort=title`));
     if (!page) return;
@@ -621,6 +650,8 @@ function init() {
     $("#undoBtn").addEventListener("click", undoLast);
     $("#settingsBtn").addEventListener("click", openSettings);
     $("#refreshActivity").addEventListener("click", loadActivity);
+    $("#runOverdueCheck").addEventListener("click", runOverdueCheck);
+    $$("[data-export]").forEach(b => b.addEventListener("click", () => downloadExport(b.dataset.export)));
     $("#settingsForm").addEventListener("submit", e => {
         e.preventDefault();
         try { localStorage.setItem("apiKey", e.target.apiKey.value.trim() || DEFAULT_API_KEY); } catch { /* private mode */ }
