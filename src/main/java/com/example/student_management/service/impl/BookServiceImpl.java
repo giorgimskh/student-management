@@ -3,12 +3,15 @@ package com.example.student_management.service.impl;
 import com.example.student_management.service.BookService;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Student;
+import com.example.student_management.exceptions.InvalidCopyCountException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,6 +53,20 @@ public class BookServiceImpl implements BookService {
         }
 
         bookRepository.delete(book);
+    }
+
+    @Override
+    @Transactional
+    public List<Book> addCopies(UUID bookId, int count) {
+        if (count < 1 || count > MAX_COPIES) {
+            throw new InvalidCopyCountException("Number of copies must be between 1 and " + MAX_COPIES);
+        }
+        Book prototype = getBookById(bookId);
+        List<Book> copies = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            copies.add(prototype.copy());
+        }
+        return bookRepository.saveAll(copies);
     }
 
     @Override

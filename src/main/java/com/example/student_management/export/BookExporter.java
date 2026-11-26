@@ -15,12 +15,12 @@ import java.util.UUID;
 
 /** Every book, with who has it and when it is due. */
 @Component
-public class BookCsvExporter extends CsvExporter<Book> {
+public class BookExporter extends TableExporter<Book> {
     private final BookRepository bookRepository;
     private final BookLoanRepository loanRepository;
     private Map<UUID, BookLoan> openLoanByBook = Map.of();
 
-    public BookCsvExporter(BookRepository bookRepository, BookLoanRepository loanRepository) {
+    public BookExporter(BookRepository bookRepository, BookLoanRepository loanRepository) {
         this.bookRepository = bookRepository;
         this.loanRepository = loanRepository;
     }

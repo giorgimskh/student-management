@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Keeps the command history in memory. Only commands that executed without
@@ -18,7 +19,8 @@ import java.util.List;
 public class InMemoryStudentCommandInvoker implements StudentCommandInvoker {
     static final int MAX_HISTORY = 50;
 
-    private final Deque<StudentCommand<?>> history = new ArrayDeque<>();
+    private final Deque<CommandEntry> history = new ArrayDeque<>();
+    private long nextId = 1;
     private final UndoGuard undoGuard;
 
     /** No undo guard: every undo is attempted. */
@@ -42,7 +44,7 @@ public class InMemoryStudentCommandInvoker implements StudentCommandInvoker {
         if (history.size() == MAX_HISTORY) {
             history.removeLast();
         }
-        history.push(command);
+        history.push(new CommandEntry(nextId++, command));
         return result;
     }
 
@@ -53,10 +55,11 @@ public class InMemoryStudentCommandInvoker implements StudentCommandInvoker {
      */
     @Override
     public synchronized StudentCommand<?> undoLast() {
-        StudentCommand<?> command = history.peek();
-        if (command == null) {
+        CommandEntry entry = history.peek();
+        if (entry == null) {
             throw new NothingToUndoException("There is no command to undo");
         }
+        StudentCommand<?> command = entry.command();
         undoGuard.check(command);
         history.pop();
         command.undo();
@@ -65,11 +68,21 @@ public class InMemoryStudentCommandInvoker implements StudentCommandInvoker {
 
     @Override
     public synchronized List<String> history() {
-        return history.stream().map(StudentCommand::description).toList();
+        return history.stream().map(entry -> entry.command().description()).toList();
     }
 
     @Override
     public synchronized List<StudentCommand<?>> commands() {
+        return history.stream().<StudentCommand<?>>map(CommandEntry::command).toList();
+    }
+
+    @Override
+    public synchronized List<CommandEntry> entries() {
         return List.copyOf(history);
+    }
+
+    @Override
+    public synchronized Optional<StudentCommand<?>> find(long id) {
+        return history.stream().filter(entry -> entry.id() == id).<StudentCommand<?>>map(CommandEntry::command).findFirst();
     }
 }

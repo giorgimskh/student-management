@@ -5,6 +5,7 @@ import com.example.student_management.mapper.StudentMapper;
 import org.springframework.context.annotation.Import;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Student;
+import com.example.student_management.exceptions.InvalidCopyCountException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.service.BookService;
 import org.junit.jupiter.api.Test;
@@ -153,5 +154,38 @@ public class BookControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Book with id: " + bookId + " has no owner"));
     }
-}
 
+    @Test
+    void addCopies_returns201WithTheNewBooks() throws Exception {
+        UUID id = UUID.randomUUID();
+        Book copy1 = Book.builder().id(UUID.randomUUID()).title("Clean code").isbn(VALID_ISBN).build();
+        Book copy2 = Book.builder().id(UUID.randomUUID()).title("Clean code").isbn(VALID_ISBN).build();
+        when(bookService.addCopies(id, 2)).thenReturn(List.of(copy1, copy2));
+
+        mockMvc.perform(post("/api/books/{id}/copies", id).param("count", "2"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[1].id").value(copy2.getId().toString()))
+                .andExpect(jsonPath("$[1].title").value("Clean code"));
+    }
+
+    @Test
+    void addCopies_defaultsToOne() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(bookService.addCopies(id, 1)).thenReturn(List.of(Book.builder().id(UUID.randomUUID()).title("T").build()));
+
+        mockMvc.perform(post("/api/books/{id}/copies", id))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    void addCopies_badCount_is400() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(bookService.addCopies(id, 0)).thenThrow(new InvalidCopyCountException("Number of copies must be between 1 and 20"));
+
+        mockMvc.perform(post("/api/books/{id}/copies", id).param("count", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Number of copies must be between 1 and 20"));
+    }
+}

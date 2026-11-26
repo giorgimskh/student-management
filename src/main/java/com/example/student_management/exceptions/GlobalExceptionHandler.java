@@ -75,6 +75,16 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("Invalid value for parameter '" + ex.getName() + "'", HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(CommandNotRepeatableException.class)
+    public ResponseEntity<Map<String, String>> handleCommandNotRepeatableException(CommandNotRepeatableException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(InvalidCopyCountException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidCopyCountException(InvalidCopyCountException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGlobalException(Exception ex) {
         // Spring MVC's own exceptions (unknown route, wrong method, missing param/part,

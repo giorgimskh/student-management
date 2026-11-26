@@ -11,12 +11,12 @@ import java.util.List;
 
 /** The full loan history, newest first, including whether each open loan is overdue. */
 @Component
-public class LoanCsvExporter extends CsvExporter<BookLoan> {
+public class LoanExporter extends TableExporter<BookLoan> {
     private final BookLoanRepository loanRepository;
     private final Clock clock;
     private Instant now;
 
-    public LoanCsvExporter(BookLoanRepository loanRepository, Clock clock) {
+    public LoanExporter(BookLoanRepository loanRepository, Clock clock) {
         this.loanRepository = loanRepository;
         this.clock = clock;
     }

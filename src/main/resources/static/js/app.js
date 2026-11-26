@@ -27,6 +27,7 @@ const state = {
     coursePage: 0,
     names: new Map(),       // id -> display name for students, books and courses (activity feed, undo history)
     photoUrls: new Map(),   // studentId -> object URL (photos need the API key header, so <img src> can't fetch them)
+    historyEntries: [],     // undo history entries from /api/commands/entries (id, description, studentId, repeatable)
 };
 
 /* ---------- Helpers ---------- */
@@ -461,17 +462,21 @@ async function runOverdueCheck() {
     loadBooks();
 }
 
-/** Downloads a CSV export. A plain link can't send the API key header, so fetch it and save the blob. */
-async function downloadExport(type) {
-    const res = await attempt(() => api(`/api/export/${encodeURIComponent(type)}.csv`, { raw: true }));
+/**
+ * Downloads an export, e.g. path "export/students" and format "json" fetches /api/export/students.json.
+ * A plain link can't send the API key header, so fetch it and save the blob.
+ */
+async function downloadExport(path, format = "csv") {
+    const fileName = `${path.split("/").pop()}.${format}`;
+    const res = await attempt(() => api(`/api/${path}.${encodeURIComponent(format)}`, { raw: true }));
     if (!res) return;
     const url = URL.createObjectURL(await res.blob());
-    const link = Object.assign(document.createElement("a"), { href: url, download: `${type}.csv` });
+    const link = Object.assign(document.createElement("a"), { href: url, download: fileName });
     document.body.appendChild(link);
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast(`Downloaded ${type}.csv`);
+    toast(`Downloaded ${fileName}`);
 }
 
 async function loadBooks() {
@@ -503,11 +508,22 @@ async function loadBooks() {
                 ? `<a href="#" data-goto="${esc(loan.studentId)}">${esc(loan.studentName)}</a>`
                 : '<span class="badge badge-free">Available</span>'}</td>
             <td>${loan ? dueBadge(loan) : ""}</td>
-            <td><button class="btn btn-danger btn-small" data-delete-book="${esc(b.id)}" data-title="${esc(b.title)}">Delete</button></td>
+            <td class="row-actions">
+                <button class="btn btn-ghost btn-small" data-copy-book="${esc(b.id)}" data-title="${esc(b.title)}" title="Add more copies of this book">+ Copies</button>
+                <button class="btn btn-danger btn-small" data-delete-book="${esc(b.id)}" data-title="${esc(b.title)}">Delete</button>
+            </td>
         </tr>`;
     }).join("");
 
     $$("[data-goto]", tbody).forEach(a => a.addEventListener("click", e => { e.preventDefault(); gotoStudent(a.dataset.goto); }));
+    $$("[data-copy-book]", tbody).forEach(b => b.addEventListener("click", async () => {
+        const answer = prompt(`How many more copies of "${b.dataset.title}"?`, "1");
+        if (answer === null) return;
+        const count = Number(answer);
+        if (!Number.isInteger(count) || count < 1) { toast("Enter a whole number of copies, 1 or more", true); return; }
+        const copies = await attempt(() => api(`/api/books/${b.dataset.copyBook}/copies?count=${count}`, { method: "POST" }));
+        if (copies) { toast(`Added ${copies.length} cop${copies.length === 1 ? "y" : "ies"} of "${b.dataset.title}"`); loadBooks(); }
+    }));
     $$("[data-delete-book]", tbody).forEach(b => b.addEventListener("click", async () => {
         if (!confirm(`Delete "${b.dataset.title}"?`)) return;
         if (await attempt(() => api(`/api/books/${b.dataset.deleteBook}`, { method: "DELETE" }), "Book deleted") !== undefined) loadBooks();
@@ -596,16 +612,71 @@ function activityList(events, limit = 50) {
 async function loadActivity() {
     const [events, history, students, books, courses] = await Promise.all([
         attempt(() => api("/api/activity")),
-        attempt(() => api("/api/commands/history")),
+        attempt(() => api("/api/commands/entries")),
         attempt(() => api("/api/students?size=100")),
         attempt(() => api("/api/books?size=100")),
         attempt(() => api("/api/courses?size=100")),
     ]);
     rememberNames({ students: students?.content, books: books?.content, courses: courses?.content });
     $("#activityFeed").outerHTML = `<div id="activityFeed">${activityList(events ?? [])}</div>`;
-    $("#historyList").innerHTML = (history ?? []).length
-        ? history.map(h => `<li>${esc(withNames(h))}</li>`).join("")
+    state.historyEntries = history ?? [];
+    $("#historyList").innerHTML = state.historyEntries.length
+        ? state.historyEntries.map(h => `<li><span>${esc(withNames(h.description))}</span>${h.repeatable
+            ? `<button class="btn btn-ghost btn-small" data-repeat="${h.id}" title="Do the same for other students">Repeat…</button>`
+            : ""}</li>`).join("")
         : '<li class="none" style="background:none">Nothing to undo.</li>';
+    $$("[data-repeat]", $("#historyList")).forEach(b => b.addEventListener("click", () => openRepeatDialog(Number(b.dataset.repeat))));
+}
+
+/* ---------- Repeat a command for other students (Prototype) ---------- */
+
+async function openRepeatDialog(entryId) {
+    const entry = state.historyEntries.find(h => h.id === entryId);
+    if (!entry) return;
+    const page = await attempt(() => api("/api/students?size=100&sort=name"));
+    if (!page) return;
+    const dialog = $("#repeatDialog");
+    const form = $("#repeatForm");
+    form.dataset.entryId = entryId;
+    $(".form-error", form).hidden = true;
+    $("#repeatWhat").textContent = `"${withNames(entry.description)}", for:`;
+    $("#repeatFilter").value = "";
+    const others = page.content.filter(s => s.id !== entry.studentId);
+    $("#repeatStudents").innerHTML = others.length
+        ? others.map(s => `
+            <li data-name="${esc(s.name.toLowerCase())}"><label>
+                <input type="checkbox" name="studentIds" value="${esc(s.id)}">
+                <span>${esc(s.name)}</span> ${badge(s.status)}
+            </label></li>`).join("")
+        : '<li class="none">There are no other students.</li>';
+    dialog.showModal();
+    $("#repeatFilter").focus();
+}
+
+async function submitRepeat(e) {
+    e.preventDefault();
+    const form = $("#repeatForm");
+    const error = $(".form-error", form);
+    const studentIds = $$('input[name="studentIds"]:checked', form).map(c => c.value);
+    if (!studentIds.length) {
+        error.textContent = "Choose at least one student.";
+        error.hidden = false;
+        return;
+    }
+    try {
+        const { results } = await api(`/api/commands/${form.dataset.entryId}/repeat`, { method: "POST", body: { studentIds } });
+        $("#repeatDialog").close();
+        const done = results.filter(r => r.outcome === "DONE").length;
+        const failed = results.filter(r => r.outcome === "FAILED");
+        const nameOf = id => state.names.get(id) || "a student";
+        toast(failed.length
+            ? `Done for ${done}; failed for ${failed.map(r => `${nameOf(r.studentId)} (${r.message})`).join(", ")}`
+            : `Done for ${done} student${done === 1 ? "" : "s"}`, failed.length > 0 && done === 0);
+        loadActivity();
+    } catch (err) {
+        error.textContent = err.message;
+        error.hidden = false;
+    }
 }
 
 async function undoLast() {
@@ -733,10 +804,16 @@ function init() {
     $$("[data-close]").forEach(b => b.addEventListener("click", () => b.closest("dialog").close()));
 
     $("#undoBtn").addEventListener("click", undoLast);
+    $("#repeatForm").addEventListener("submit", submitRepeat);
+    $("#repeatFilter").addEventListener("input", e => {
+        const q = e.target.value.trim().toLowerCase();
+        $$("#repeatStudents li[data-name]").forEach(li => { li.hidden = q && !li.dataset.name.includes(q); });
+    });
     $("#settingsBtn").addEventListener("click", openSettings);
     $("#refreshActivity").addEventListener("click", loadActivity);
     $("#runOverdueCheck").addEventListener("click", runOverdueCheck);
-    $$("[data-export]").forEach(b => b.addEventListener("click", () => downloadExport(b.dataset.export)));
+    $$("[data-export]").forEach(b => b.addEventListener("click", () =>
+        downloadExport(b.dataset.export, (b.dataset.formatFrom && $(b.dataset.formatFrom)?.value) || "csv")));
     $("#refreshReports").addEventListener("click", loadReports);
     document.addEventListener("click", e => {
         const target = e.target.closest("[data-goto-student]");

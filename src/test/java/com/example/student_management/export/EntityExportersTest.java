@@ -23,9 +23,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-/** The three concrete exporters: each only supplies columns, records and rows. */
+/** The three concrete exporters: each only supplies columns, records and rows. Written as CSV here. */
 @ExtendWith(MockitoExtension.class)
-class EntityCsvExportersTest {
+class EntityExportersTest {
+    private static final CsvFormatFactory CSV = new CsvFormatFactory();
     private static final Instant NOW = Instant.parse("2026-03-20T10:00:00Z");
 
     @Mock
@@ -43,9 +44,19 @@ class EntityCsvExportersTest {
     void students() {
         when(studentRepository.findAll(Sort.by("name"))).thenReturn(List.of(ana));
 
-        assertThat(new StudentCsvExporter(studentRepository).export()).isEqualTo(
+        assertThat(new StudentExporter(studentRepository).export(CSV)).isEqualTo(
                 "id,name,email,status,created_at\r\n"
                         + anaId + ",\"Smith, Ana\",ana@example.com,SUSPENDED,2026-01-01T00:00:00Z\r\n");
+    }
+
+    @Test
+    void students_asJson_keepMissingValuesAsNull() {
+        Student noEmail = Student.builder().id(anaId).name("Ana").status(StudentStatus.ACTIVE).build();
+        when(studentRepository.findAll(Sort.by("name"))).thenReturn(List.of(noEmail));
+
+        String json = new StudentExporter(studentRepository).export(JsonFormatFactoryTest.factory()).replaceAll("\\s", "");
+
+        assertThat(json).isEqualTo("[{\"id\":\"" + anaId + "\",\"name\":\"Ana\",\"email\":null,\"status\":\"ACTIVE\",\"created_at\":null}]");
     }
 
     @Test
@@ -56,7 +67,7 @@ class EntityCsvExportersTest {
         when(bookRepository.findAll(Sort.by("title"))).thenReturn(List.of(lent, free));
         when(loanRepository.findByReturnedAtIsNullOrderByDueAtAsc()).thenReturn(List.of(loan));
 
-        String csv = new BookCsvExporter(bookRepository, loanRepository).export();
+        String csv = new BookExporter(bookRepository, loanRepository).export(CSV);
 
         assertThat(csv.split("\r\n")).containsExactly(
                 "id,title,isbn,borrowed_by,due_at",
@@ -74,7 +85,7 @@ class EntityCsvExportersTest {
                 .returnedAt(NOW.minus(Duration.ofDays(50))).build();
         when(loanRepository.findAllByOrderByBorrowedAtDesc()).thenReturn(List.of(late, returned));
 
-        String csv = new LoanCsvExporter(loanRepository, Clock.fixed(NOW, ZoneOffset.UTC)).export();
+        String csv = new LoanExporter(loanRepository, Clock.fixed(NOW, ZoneOffset.UTC)).export(CSV);
 
         assertThat(csv.split("\r\n")).containsExactly(
                 "book,student,borrowed_at,due_at,returned_at,overdue",

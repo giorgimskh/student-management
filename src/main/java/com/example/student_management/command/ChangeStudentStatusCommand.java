@@ -49,6 +49,12 @@ public final class ChangeStudentStatusCommand implements StudentCommand<Student>
         return transition;
     }
 
+    /** The copy starts without a remembered status; it records its own when executed. */
+    @Override
+    public ChangeStudentStatusCommand copyFor(UUID studentId) {
+        return new ChangeStudentStatusCommand(studentService, studentId, transition);
+    }
+
     @Override
     public <T> T accept(StudentCommandVisitor<T> visitor) {
         return visitor.visit(this);

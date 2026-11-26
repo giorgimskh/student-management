@@ -28,6 +28,15 @@ public class Book implements Visitable {
     @EqualsAndHashCode.Exclude
     private Student student;
 
+    /**
+     * Prototype: a new, unsaved copy of this book (another physical copy of
+     * the same title). It keeps the title and ISBN but has no id and is not
+     * lent to anyone, whatever the state of this one.
+     */
+    public Book copy() {
+        return Book.builder().title(title).isbn(isbn).build();
+    }
+
     /** Visits only this element; it does not walk back to its student(s). */
     @Override
     public void accept(StudentGraphVisitor visitor) {

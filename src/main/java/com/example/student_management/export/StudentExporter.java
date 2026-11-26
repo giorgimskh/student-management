@@ -5,13 +5,14 @@ import com.example.student_management.repository.StudentRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Component
-public class StudentCsvExporter extends CsvExporter<Student> {
+public class StudentExporter extends TableExporter<Student> {
     private final StudentRepository studentRepository;
 
-    public StudentCsvExporter(StudentRepository studentRepository) {
+    public StudentExporter(StudentRepository studentRepository) {
         this.studentRepository = studentRepository;
     }
 
@@ -32,11 +33,6 @@ public class StudentCsvExporter extends CsvExporter<Student> {
 
     @Override
     protected List<?> toRow(Student s) {
-        return List.of(s.getId(), nullToEmpty(s.getName()), nullToEmpty(s.getEmail()), s.getStatus(),
-                s.getCreatedAt() == null ? "" : s.getCreatedAt());
-    }
-
-    private static String nullToEmpty(String value) {
-        return value == null ? "" : value;
+        return Arrays.asList(s.getId(), s.getName(), s.getEmail(), s.getStatus(), s.getCreatedAt());
     }
 }

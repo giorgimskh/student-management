@@ -41,7 +41,7 @@
                 <div class="panel-head">
                     <h2>Students</h2>
                     <span class="head-actions">
-                        <button class="btn btn-ghost" data-export="students" title="Download all students as CSV">Export CSV</button>
+                        <button class="btn btn-ghost" data-export="export/students" title="Download all students as CSV">Export CSV</button>
                         <button class="btn btn-primary" data-open="studentDialog">+ New student</button>
                     </span>
                 </div>
@@ -74,8 +74,8 @@
             <div class="panel-head">
                 <h2>Books <span id="overdueSummary" class="summary"></span></h2>
                 <span class="head-actions">
-                    <button class="btn btn-ghost" data-export="books" title="Download all books as CSV">Export books</button>
-                    <button class="btn btn-ghost" data-export="loans" title="Download the full loan history as CSV">Export loans</button>
+                    <button class="btn btn-ghost" data-export="export/books" title="Download all books as CSV">Export books</button>
+                    <button class="btn btn-ghost" data-export="export/loans" title="Download the full loan history as CSV">Export loans</button>
                     <button class="btn btn-primary" data-open="bookDialog">+ New book</button>
                 </span>
             </div>
@@ -115,7 +115,7 @@
             </div>
             <div class="panel">
                 <div class="panel-head"><h2>Undo history</h2></div>
-                <p class="hint">Actions you can undo, most recent last. <strong>Undo</strong> in the top bar reverts the last one.</p>
+                <p class="hint">Actions you can undo. <strong>Undo</strong> in the top bar reverts the most recent one. Enrollments and status changes can be <strong>repeated</strong> for other students.</p>
                 <ol id="historyList" class="history"></ol>
             </div>
         </div>
@@ -127,9 +127,21 @@
             <h2>Reports</h2>
             <div class="btns">
                 <button class="btn btn-ghost" id="refreshReports">Refresh</button>
-                <button class="btn btn-primary" data-export="students" title="Download all students as CSV">
+                <select id="reportFormat" aria-label="Download format" title="Format for the downloads">
+                    <option value="csv">CSV</option>
+                    <option value="json">JSON</option>
+                </select>
+                <button class="btn btn-ghost" data-export="reports/statistics" data-format-from="#reportFormat" title="Download the statistics">
                     <svg viewBox="0 0 24 24" class="icon"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
-                    Download CSV
+                    Statistics
+                </button>
+                <button class="btn btn-ghost" data-export="reports/audit" data-format-from="#reportFormat" title="Download the audit findings">
+                    <svg viewBox="0 0 24 24" class="icon"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+                    Audit
+                </button>
+                <button class="btn btn-primary" data-export="export/students" data-format-from="#reportFormat" title="Download all students">
+                    <svg viewBox="0 0 24 24" class="icon"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+                    Students
                 </button>
             </div>
         </div>
@@ -210,6 +222,20 @@
         <ul id="courseStudentsList" class="rows compact"></ul>
         <div class="dialog-actions">
             <button class="btn btn-primary">Close</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="repeatDialog" class="dialog">
+    <form method="dialog" id="repeatForm">
+        <h3>Repeat for other students</h3>
+        <p class="hint" id="repeatWhat"></p>
+        <input type="search" id="repeatFilter" placeholder="Filter by name" aria-label="Filter students">
+        <ul id="repeatStudents" class="pick-list"></ul>
+        <p class="form-error" hidden></p>
+        <div class="dialog-actions">
+            <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+            <button class="btn btn-primary" value="submit">Apply</button>
         </div>
     </form>
 </dialog>

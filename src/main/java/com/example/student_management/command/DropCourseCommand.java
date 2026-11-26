@@ -24,6 +24,11 @@ public record DropCourseCommand(StudentService studentService, UUID studentId, U
     }
 
     @Override
+    public DropCourseCommand copyFor(UUID studentId) {
+        return new DropCourseCommand(studentService, studentId, courseId);
+    }
+
+    @Override
     public <T> T accept(StudentCommandVisitor<T> visitor) {
         return visitor.visit(this);
     }

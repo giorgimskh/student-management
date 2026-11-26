@@ -12,9 +12,11 @@ import com.example.student_management.service.BookService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -45,6 +47,13 @@ public class BookController {
     @PostMapping
     public ResponseEntity<BookResponse> createBook(@Valid @RequestBody BookRequest request) {
         return ResponseEntity.ok(bookMapper.toResponse(bookService.createBook(bookMapper.toEntity(request))));
+    }
+
+    /** Adds {@code count} (default 1) more copies of the book, same title and ISBN, none of them lent. */
+    @PostMapping("/{id}/copies")
+    public ResponseEntity<List<BookResponse>> addCopies(@PathVariable UUID id, @RequestParam(defaultValue = "1") int count) {
+        List<BookResponse> copies = bookService.addCopies(id, count).stream().map(bookMapper::toResponse).toList();
+        return ResponseEntity.status(HttpStatus.CREATED).body(copies);
     }
 
     @DeleteMapping("/{id}")

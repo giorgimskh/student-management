@@ -1,6 +1,7 @@
 package com.example.student_management.command;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Invoker of the command pattern: runs {@link StudentCommand}s and remembers the
@@ -23,4 +24,10 @@ public interface StudentCommandInvoker {
 
     /** The recorded commands themselves, most recent first (e.g. to run a visitor over them). */
     List<StudentCommand<?>> commands();
+
+    /** The recorded commands with their ids, most recent first. */
+    List<CommandEntry> entries();
+
+    /** The recorded command with this id, if it is still in the history. */
+    Optional<StudentCommand<?>> find(long id);
 }

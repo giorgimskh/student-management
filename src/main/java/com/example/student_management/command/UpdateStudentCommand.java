@@ -1,5 +1,6 @@
 package com.example.student_management.command;
 
+import com.example.student_management.exceptions.CommandNotRepeatableException;
 import com.example.student_management.domain.Student;
 import com.example.student_management.domain.StudentMemento;
 import com.example.student_management.service.StudentService;
@@ -47,6 +48,17 @@ public final class UpdateStudentCommand implements StudentCommand<Student> {
     /** The new profile values this command applies. */
     public Student details() {
         return details;
+    }
+
+    /** Not repeatable: another student cannot be given the same name and email. */
+    @Override
+    public boolean repeatable() {
+        return false;
+    }
+
+    @Override
+    public StudentCommand<Student> copyFor(UUID studentId) {
+        throw new CommandNotRepeatableException("This action can't be repeated for another student: another student cannot be given the same name and email");
     }
 
     @Override

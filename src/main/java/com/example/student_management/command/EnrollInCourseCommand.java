@@ -24,6 +24,11 @@ public record EnrollInCourseCommand(StudentService studentService, UUID studentI
     }
 
     @Override
+    public EnrollInCourseCommand copyFor(UUID studentId) {
+        return new EnrollInCourseCommand(studentService, studentId, courseId);
+    }
+
+    @Override
     public <T> T accept(StudentCommandVisitor<T> visitor) {
         return visitor.visit(this);
     }

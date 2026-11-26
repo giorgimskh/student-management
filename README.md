@@ -9,10 +9,12 @@ A Spring Boot REST API and web UI for managing students, their book loans, cours
 - **Student status**: ACTIVE, SUSPENDED, GRADUATED or WITHDRAWN. The status decides whether a student may edit their profile, borrow books or enroll (`POST /api/students/{id}/suspend|reactivate|graduate|withdraw`).
 - **Book loans**: a book is lent to at most one student at a time, with a due date (`app.loans.period-days`) and a kept history (`GET /api/loans`, `GET /api/students/{id}/loans`).
 - **Overdue handling**: an hourly check reports newly overdue loans and applies the configured overdue policy (see below).
-- **CSV export**: `GET /api/export/students.csv`, `books.csv` and `loans.csv`.
+- **Export (CSV or JSON)**: `GET /api/export/{students|books|loans}.{csv|json}`, and the reports as files: `GET /api/reports/statistics.{csv|json}` and `/api/reports/audit.{csv|json}`.
+- **Book copies**: add more copies of a book with the same title and ISBN (`POST /api/books/{id}/copies?count=3`, at most 20 at a time).
 - **Course enrollment**: enroll in and drop courses (many-to-many); no double enrollment.
 - **Student photos**: upload, retrieve, and delete one ID photo per student (images only, max 2 MB).
 - **Undo**: profile updates, lending, enrollment and status changes can be undone (`POST /api/commands/undo`).
+- **Repeat for other students**: an enrollment, course drop or status change in the undo history can be repeated for a list of students (`GET /api/commands/entries`, `POST /api/commands/{id}/repeat` with `{"studentIds": [...]}`). Each student gets their own result and their own undo entry.
 - **Activity feed**: recent student events (`GET /api/activity`).
 
 ## Tech Stack
@@ -60,7 +62,9 @@ app.loans.suspend-after-days=7
 | Memento | `StudentMemento` snapshots a profile so an update can be undone |
 | State | `StudentState` per `StudentStatus` decides what a student may do and which status changes are allowed |
 | Strategy | `OverduePolicy`: `NotifyOnlyPolicy` or `SuspendStudentPolicy`, chosen by `app.loans.overdue-policy` |
-| Template Method | `CsvExporter.export()` fixes the CSV steps; `StudentCsvExporter`, `BookCsvExporter` and `LoanCsvExporter` fill them in |
+| Template Method | `TableExporter.export()` fixes the export steps; `StudentExporter`, `BookExporter` and `LoanExporter` fill them in |
+| Abstract Factory | `ExportFormatFactory` creates a matching family of writers (`TableWriter`, `ReportWriter`) plus media type and extension per format: `CsvFormatFactory` or `JsonFormatFactory`, picked from the URL's extension |
+| Prototype | `StudentCommand.copyFor(studentId)` copies a history entry for another student without knowing its concrete class (`CommandRepeater`); `Book.copy()` makes another copy of a book |
 
 ## Authentication
 

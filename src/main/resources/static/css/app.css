@@ -271,10 +271,22 @@ label input { color: var(--text); font-weight: 400; }
 .history { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
 .history li { padding: 6px 10px; background: var(--surface-2); border-radius: 8px; font-size: .9rem; }
 .history li:last-child { background: var(--accent-soft); font-weight: 600; }
+.history li { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.history li .btn { flex: none; font-weight: 500; }
+.row-actions { white-space: nowrap; }
+.row-actions .btn + .btn { margin-left: 6px; }
+.pick-list { list-style: none; margin: 10px 0; padding: 0; max-height: 320px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: 8px; }
+.pick-list li + li { border-top: 1px solid var(--border); }
+.pick-list label { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; }
+.pick-list label:hover { background: var(--surface-2); }
+.pick-list input[type="checkbox"] { width: auto; }
+.pick-list li.none { padding: 12px; }
 
 /* ---------- Reports ---------- */
 .reports-head { margin-bottom: 16px; }
-.reports-head .btns { display: flex; gap: 8px; }
+.reports-head .btns { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.reports-head .btns select { width: auto; }
 .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
 .stat-tile {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);

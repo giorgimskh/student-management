@@ -146,4 +146,28 @@ class StudentCommandInvokerTest {
 
         assertThat(invoker.commands()).containsExactly(second, first);
     }
+
+    @Test
+    void entries_haveIdsThatStayTheSame_whenNewerCommandsArrive() {
+        StudentCommand<?> first = new EnrollInCourseCommand(studentService, studentId, courseId);
+        invoker.execute(first);
+        long firstId = invoker.entries().getFirst().id();
+
+        invoker.execute(new DropCourseCommand(studentService, studentId, courseId));
+
+        assertThat(invoker.entries()).extracting(CommandEntry::id).containsExactly(firstId + 1, firstId);
+        assertThat(invoker.find(firstId)).containsSame(first);
+    }
+
+    @Test
+    void find_isEmpty_onceTheCommandIsUndone_andIdsAreNotReused() {
+        invoker.execute(new EnrollInCourseCommand(studentService, studentId, courseId));
+        long undoneId = invoker.entries().getFirst().id();
+        invoker.undoLast();
+
+        invoker.execute(new EnrollInCourseCommand(studentService, studentId, courseId));
+
+        assertThat(invoker.find(undoneId)).isEmpty();
+        assertThat(invoker.entries().getFirst().id()).isNotEqualTo(undoneId);
+    }
 }

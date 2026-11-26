@@ -3,6 +3,7 @@ package com.example.student_management.service;
 import com.example.student_management.service.impl.BookServiceImpl;
 import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Student;
+import com.example.student_management.exceptions.InvalidCopyCountException;
 import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
@@ -14,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -76,5 +78,44 @@ public class BookServiceTest {
                 .hasMessageContaining(bookId.toString());
     }
 
+    @Test
+    void copy_keepsTitleAndIsbn_butHasNoIdAndNoBorrower() {
+        Book lent = Book.builder().id(UUID.randomUUID()).title("Clean Code").isbn("9780132350884")
+                .student(Student.builder().id(UUID.randomUUID()).build()).build();
 
+        Book copy = lent.copy();
+
+        assertThat(copy).isNotSameAs(lent);
+        assertThat(copy.getTitle()).isEqualTo("Clean Code");
+        assertThat(copy.getIsbn()).isEqualTo("9780132350884");
+        assertThat(copy.getId()).isNull();
+        assertThat(copy.getStudent()).isNull();
+        assertThat(lent.getStudent()).isNotNull(); // the original is untouched
+    }
+
+    @Test
+    void addCopies_savesThatManyCopiesOfTheBook() {
+        UUID id = UUID.randomUUID();
+        Book original = Book.builder().id(id).title("Refactoring").isbn("9780134757599").build();
+        when(bookRepository.findById(id)).thenReturn(Optional.of(original));
+        when(bookRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        List<Book> copies = bookService.addCopies(id, 3);
+
+        assertThat(copies).hasSize(3).doesNotContain(original)
+                .allSatisfy(c -> {
+                    assertThat(c.getTitle()).isEqualTo("Refactoring");
+                    assertThat(c.getIsbn()).isEqualTo("9780134757599");
+                });
+        assertThat(copies.get(0)).isNotSameAs(copies.get(1)).isNotSameAs(copies.get(2)); // separate objects, not one book saved thrice
+    }
+
+    @Test
+    void addCopies_rejectsCountsOutsideTheLimit_withoutLookingUpTheBook() {
+        UUID id = UUID.randomUUID();
+
+        assertThatThrownBy(() -> bookService.addCopies(id, 0)).isInstanceOf(InvalidCopyCountException.class);
+        assertThatThrownBy(() -> bookService.addCopies(id, BookService.MAX_COPIES + 1)).isInstanceOf(InvalidCopyCountException.class);
+        verifyNoInteractions(bookRepository);
+    }
 }

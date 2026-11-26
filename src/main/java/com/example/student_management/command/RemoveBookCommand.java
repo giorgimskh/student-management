@@ -1,5 +1,6 @@
 package com.example.student_management.command;
 
+import com.example.student_management.exceptions.CommandNotRepeatableException;
 import com.example.student_management.service.StudentService;
 
 import java.util.UUID;
@@ -21,6 +22,17 @@ public record RemoveBookCommand(StudentService studentService, UUID studentId, U
     @Override
     public String description() {
         return "Remove book " + bookId + " from student " + studentId;
+    }
+
+    /** Not repeatable: a book can be lent to only one student at a time. */
+    @Override
+    public boolean repeatable() {
+        return false;
+    }
+
+    @Override
+    public StudentCommand<Void> copyFor(UUID studentId) {
+        throw new CommandNotRepeatableException("This action can't be repeated for another student: a book can be lent to only one student at a time");
     }
 
     @Override
