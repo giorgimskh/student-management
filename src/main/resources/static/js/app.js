@@ -257,7 +257,7 @@ async function renderStudentDetail() {
     const id = state.selectedId;
     if (!id) return;
 
-    const [student, books, allBooks, allCourses, activity, loans, findings] = await Promise.all([
+    const [student, books, allBooks, allCourses, activity, loans, findings, notifications] = await Promise.all([
         attempt(() => api(`/api/students/${id}`)),
         attempt(() => api(`/api/students/${id}/books?size=100`)),
         attempt(() => api(`/api/books?size=100`)),
@@ -265,6 +265,7 @@ async function renderStudentDetail() {
         attempt(() => api(`/api/students/${id}/activity`)),
         attempt(() => api(`/api/students/${id}/loans`)),
         attempt(() => api(`/api/students/${id}/audit`)),
+        attempt(() => api(`/api/students/${id}/notifications`)),
     ]);
     const openLoanByBook = new Map((loans ?? []).filter(l => !l.returnedAt).map(l => [l.bookId, l]));
     if (!student) { panel.innerHTML = '<div class="empty-state"><p>Student not found.</p></div>'; return; }
@@ -360,6 +361,10 @@ async function renderStudentDetail() {
             </section>
 
             <section>
+                ${notificationSection(notifications ?? [])}
+            </section>
+
+            <section>
                 <h4 class="section-title">Activity</h4>
                 ${activityList(activity ?? [], 6)}
             </section>
@@ -367,6 +372,17 @@ async function renderStudentDetail() {
 
     loadAvatar(student.id);
     bindDetail(student);
+}
+
+function notificationSection(notifications) {
+    const unread = notifications.filter(n => !n.readAt).length;
+    const title = `<h4 class="section-title">Notifications <span>${unread ? `${unread} unread` : notifications.length}</span>
+        ${unread ? '<button class="btn btn-ghost btn-small" id="markNotificationsRead">Mark all read</button>' : ""}</h4>`;
+    if (!notifications.length) return `${title}<p class="none">No messages yet.</p>`;
+    return `${title}<ol class="timeline notifications">${notifications.slice(0, 8).map(n => `
+        <li class="${n.readAt ? "" : "unread"}"><span class="dot ${n.readAt ? "read" : ""}"></span>
+            <span><strong>${esc(n.subject)}</strong><br><small>${esc(n.body)}</small></span>
+            <span class="time" title="${esc(n.createdAt)}">${esc(timeAgo(n.createdAt))}</span></li>`).join("")}</ol>`;
 }
 
 function loanHistory(loans) {
@@ -407,6 +423,10 @@ function bindDetail(student) {
         }
         if (await attempt(() => api(`/api/students/${id}/${t}`, { method: "POST" }), `${student.name} ${TRANSITION_DONE[t]}`)) await refresh();
     }));
+
+    $("#markNotificationsRead")?.addEventListener("click", async () => {
+        if (await attempt(() => api(`/api/students/${id}/notifications/read`, { method: "POST" }))) await renderStudentDetail();
+    });
 
     $("#profileForm").addEventListener("submit", async e => {
         e.preventDefault();

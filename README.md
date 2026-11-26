@@ -17,6 +17,7 @@ A Spring Boot REST API and web UI for managing students, their book loans, cours
 - **Undo**: profile updates, lending, enrollment and status changes can be undone (`POST /api/commands/undo`).
 - **Repeat for other students**: an enrollment, course drop or status change in the undo history can be repeated for a list of students (`GET /api/commands/entries`, `POST /api/commands/{id}/repeat` with `{"studentIds": [...]}`). Each student gets their own result and their own undo entry.
 - **Activity feed**: recent student events (`GET /api/activity`).
+- **Notifications**: students get a message when they join, a book is overdue, they are enrolled in or dropped from a course, or their status changes. Kept in an in-app inbox (`GET /api/students/{id}/notifications`, `GET .../unread-count`, `POST .../read` to mark all read) or written to the log (`app.notifications.channel`).
 
 ## Tech Stack
 
@@ -51,6 +52,8 @@ app.loans.suspend-after-days=7
 # Where student photos are kept: database, or filesystem (in app.photos.directory)
 app.photos.storage=database
 app.photos.directory=${user.home}/.student-management/photos
+# How notifications reach students: inbox (kept in the database) or log
+app.notifications.channel=inbox
 ```
 
 Photos kept in a folder are not part of database transactions or backups, and the statistics and audit reports only see photos stored in the database.
@@ -63,7 +66,7 @@ Photos kept in a folder are not part of database transactions or backups, and th
 
 | Pattern | Where |
 |---|---|
-| Observer | `StudentEventPublisher` and its listeners (activity log, logging, Spring bridge) |
+| Observer | `StudentEventPublisher` and its listeners (activity log, logging, notifications, Spring bridge) |
 | Command (with undo) | `StudentCommand` implementations run by `StudentCommandInvoker` |
 | Memento | `StudentMemento` snapshots a profile so an update can be undone |
 | State | `StudentState` per `StudentStatus` decides what a student may do and which status changes are allowed |
@@ -73,6 +76,7 @@ Photos kept in a folder are not part of database transactions or backups, and th
 | Prototype | `StudentCommand.copyFor(studentId)` copies a history entry for another student without knowing its concrete class (`CommandRepeater`); `Book.copy()` makes another copy of a book |
 | Builder | `StudentSearch.builder()` assembles optional search criteria into one JPA `Specification`; `BookLoan.lend(book).to(student).borrowedAt(..).dueAfter(..)` is a step builder that will not compile without every required part |
 | Adapter | `FileSystemPhotoStorage` adapts `java.nio.file.Files` to `PhotoStorage`, as an alternative to the database (`app.photos.storage=filesystem`); `SpringEventBridge` forwards every `StudentEvent` to Spring so beans can use `@EventListener` / `@TransactionalEventListener`, and `StudentEventApplicationListener` wraps a `StudentEventListener` as a Spring `ApplicationListener` |
+| Bridge | Notifications: the kind of message (`StudentNotification`: `WelcomeNotification`, `OverdueReminder`, `EnrollmentNotice`, `StatusChangeNotice`) holds the way it is delivered (`NotificationChannel`: `InboxNotificationChannel` or `LogNotificationChannel`, chosen by `app.notifications.channel`), so both sides grow independently. Exports are bridged the same way: every `TableExporter` writes through whichever `TableWriter` the chosen format creates |
 
 ## Authentication
 

@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Upgrading a database that Hibernate's ddl-auto created before Flyway existed:
  * it has the tables but no Flyway history. Flyway must baseline it at version 1
- * (skipping V1) and run only V2 and V3, keeping the data.
+ * (skipping V1) and run only V2 onwards, keeping the data.
  */
 @Testcontainers
 class FlywayUpgradeTest {
@@ -88,7 +88,7 @@ class FlywayUpgradeTest {
         flyway().migrate();
 
         assertThat(Arrays.stream(flyway().info().applied()).map(MigrationInfo::getVersion).map(Object::toString))
-                .containsExactly("1", "2", "3"); // 1 is the baseline marker, V1 itself did not run
+                .containsExactly("1", "2", "3", "4"); // 1 is the baseline marker, V1 itself did not run
         assertThat(query("select status from students where id = '" + studentId + "'")).isEqualTo("ACTIVE");
         assertThat(query("select is_nullable from information_schema.columns where table_name = 'students' and column_name = 'status'"))
                 .isEqualTo("NO");
@@ -110,7 +110,7 @@ class FlywayUpgradeTest {
         flyway().migrate();
 
         assertThat(Arrays.stream(flyway().info().applied()).map(MigrationInfo::getDescription))
-                .containsExactly("initial schema", "student status required", "book loans");
+                .containsExactly("initial schema", "student status required", "book loans", "notifications");
         assertThat(query("select count(*) from information_schema.tables where table_name = 'book_loans'")).isEqualTo("1");
     }
 }

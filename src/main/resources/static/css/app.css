@@ -270,6 +270,10 @@ label input { color: var(--text); font-weight: 400; }
 .dot.danger { background: var(--danger); box-shadow: 0 0 0 4px var(--danger-soft); }
 .dot.grad { background: var(--graduated); box-shadow: 0 0 0 4px var(--graduated-bg); }
 .time { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.dot.read { background: var(--border); box-shadow: none; }
+.notifications li.unread strong { color: var(--primary); }
+.notifications small { color: var(--muted); }
+.section-title .btn { margin-left: auto; text-transform: none; letter-spacing: normal; }
 .history { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
 .history li { padding: 6px 10px; background: var(--surface-2); border-radius: 8px; font-size: .9rem; }
 .history li:last-child { background: var(--accent-soft); font-weight: 600; }
