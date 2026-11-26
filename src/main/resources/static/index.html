@@ -54,6 +54,12 @@
                         <option value="GRADUATED">Graduated</option>
                         <option value="WITHDRAWN">Withdrawn</option>
                     </select>
+                    <select id="courseFilter" title="Only students enrolled in this course">
+                        <option value="">All courses</option>
+                    </select>
+                    <label class="check-filter" title="Only students with a book past its due date">
+                        <input type="checkbox" id="overdueFilter"> Overdue only
+                    </label>
                 </div>
                 <ul id="studentList" class="rows"></ul>
                 <div class="pager" id="studentPager"></div>

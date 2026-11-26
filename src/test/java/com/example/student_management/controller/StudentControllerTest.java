@@ -1,5 +1,6 @@
 package com.example.student_management.controller;
 
+import com.example.student_management.search.StudentSearch;
 import com.example.student_management.command.InMemoryStudentCommandInvoker;
 import com.example.student_management.mapper.BookMapper;
 import com.example.student_management.mapper.CourseMapper;
@@ -49,7 +50,7 @@ public class StudentControllerTest {
                 .email("nino@example.com")
                 .build();
 
-        when(studentService.getAllStudents(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(s)));
+        when(studentService.findStudents(any(StudentSearch.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(s)));
 
         mockMvc.perform(get("/api/students"))
                 .andExpect(status().isOk())

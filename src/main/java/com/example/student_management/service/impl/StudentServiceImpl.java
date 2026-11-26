@@ -19,6 +19,7 @@ import com.example.student_management.exceptions.ResourceNotFoundException;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
 import com.example.student_management.repository.StudentRepository;
+import com.example.student_management.search.StudentSearch;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -252,22 +253,20 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public Page<Student> searchStudents(String name, Pageable pageable) {
-        return studentRepository.findByNameContainingIgnoreCase(name, pageable);
+        return findStudents(StudentSearch.builder().nameContains(name).build(), pageable);
     }
 
     @Override
     public Page<Student> findStudents(String name, StudentStatus status, Pageable pageable) {
-        boolean byName = name != null && !name.isBlank();
-        if (byName && status != null) {
-            return studentRepository.findByNameContainingIgnoreCaseAndStatus(name.trim(), status, pageable);
+        return findStudents(StudentSearch.builder().nameContains(name).status(status).build(), pageable);
+    }
+
+    @Override
+    public Page<Student> findStudents(StudentSearch search, Pageable pageable) {
+        if (search.isUnrestricted()) {
+            return studentRepository.findAll(pageable);
         }
-        if (byName) {
-            return studentRepository.findByNameContainingIgnoreCase(name.trim(), pageable);
-        }
-        if (status != null) {
-            return studentRepository.findByStatus(status, pageable);
-        }
-        return studentRepository.findAll(pageable);
+        return studentRepository.findAll(search.toSpecification(Instant.now(clock)), pageable);
     }
 
     private Book findBook(UUID bookId) {

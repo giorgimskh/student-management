@@ -49,6 +49,15 @@ public class BookLoan {
     /** When the overdue check reported this loan, so it is reported only once. */
     private Instant overdueNotifiedAt;
 
+    /**
+     * Builder (step builder): starts a new loan of {@code book}; the next steps
+     * ask for the student, the borrow time and the due date, in that order.
+     * See {@link BookLoanSteps}.
+     */
+    public static BookLoanSteps.StudentStep lend(Book book) {
+        return BookLoanSteps.start(book);
+    }
+
     public boolean isOpen() {
         return returnedAt == null;
     }

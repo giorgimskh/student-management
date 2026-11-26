@@ -7,6 +7,7 @@ import com.example.student_management.exceptions.BookAlreadyAssignedException;
 import com.example.student_management.repository.BookRepository;
 import com.example.student_management.repository.CourseRepository;
 import com.example.student_management.repository.StudentRepository;
+import com.example.student_management.search.StudentSearch;
 import com.example.student_management.service.impl.StudentServiceImpl;
 import com.example.student_management.state.StudentStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -29,6 +31,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /** How {@link StudentServiceImpl} keeps loans in step with lending, and its combined name/status search. */
@@ -94,31 +97,35 @@ class StudentServiceLoansAndSearchTest {
     }
 
     @Test
-    void findStudents_nameAndStatus() {
-        when(studentRepository.findByNameContainingIgnoreCaseAndStatus("ana", StudentStatus.SUSPENDED, pageable)).thenReturn(page);
+    void findStudents_nameAndStatus_buildsASearchWithBoth() {
+        when(studentRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
         assertThat(studentService.findStudents(" ana ", StudentStatus.SUSPENDED, pageable)).isSameAs(page);
+        verify(studentRepository, never()).findAll(pageable);
     }
 
     @Test
-    void findStudents_statusOnly_whenNameIsBlank() {
-        when(studentRepository.findByStatus(StudentStatus.GRADUATED, pageable)).thenReturn(page);
-
-        assertThat(studentService.findStudents("  ", StudentStatus.GRADUATED, pageable)).isSameAs(page);
-        verify(studentRepository, never()).findByNameContainingIgnoreCase(any(), any());
-    }
-
-    @Test
-    void findStudents_nameOnly() {
-        when(studentRepository.findByNameContainingIgnoreCase("ana", pageable)).thenReturn(page);
-
-        assertThat(studentService.findStudents("ana", null, pageable)).isSameAs(page);
-    }
-
-    @Test
-    void findStudents_noFilters_returnsEveryone() {
+    void findStudents_blankNameAndNoStatus_returnsEveryoneWithoutASpecification() {
         when(studentRepository.findAll(pageable)).thenReturn(page);
 
-        assertThat(studentService.findStudents(null, null, pageable)).isSameAs(page);
+        assertThat(studentService.findStudents("  ", null, pageable)).isSameAs(page);
+        verify(studentRepository, never()).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void findStudents_withSearch_usesItsSpecification() {
+        when(studentRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+
+        StudentSearch search = StudentSearch.builder().withOverdueLoans().enrolledIn(UUID.randomUUID()).build();
+
+        assertThat(studentService.findStudents(search, pageable)).isSameAs(page);
+    }
+
+    @Test
+    void findStudents_unrestrictedSearch_returnsEveryone() {
+        when(studentRepository.findAll(pageable)).thenReturn(page);
+
+        assertThat(studentService.findStudents(StudentSearch.everyone(), pageable)).isSameAs(page);
+        assertThat(studentService.searchStudents(" ", pageable)).isSameAs(page);
     }
 }

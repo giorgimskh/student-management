@@ -40,12 +40,7 @@ public class LoanServiceImpl implements LoanService {
     @Override
     public BookLoan openLoan(Book book, Student student) {
         Instant now = Instant.now(clock);
-        return loanRepository.save(BookLoan.builder()
-                .book(book)
-                .student(student)
-                .borrowedAt(now)
-                .dueAt(now.plus(loanPeriod))
-                .build());
+        return loanRepository.save(BookLoan.lend(book).to(student).borrowedAt(now).dueAfter(loanPeriod).build());
     }
 
     @Override

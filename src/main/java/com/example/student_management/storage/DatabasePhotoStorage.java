@@ -3,14 +3,19 @@ package com.example.student_management.storage;
 import com.example.student_management.domain.Student;
 import com.example.student_management.domain.StudentPhoto;
 import com.example.student_management.repository.StudentPhotoRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Keeps photo bytes in the {@code student_photos} table. */
+/**
+ * Keeps photo bytes in the {@code student_photos} table. The default; the other
+ * choice is {@link FileSystemPhotoStorage} ({@code app.photos.storage=filesystem}).
+ */
 @Component
+@ConditionalOnProperty(name = "app.photos.storage", havingValue = "database", matchIfMissing = true)
 public class DatabasePhotoStorage implements PhotoStorage {
     private final StudentPhotoRepository studentPhotoRepository;
 

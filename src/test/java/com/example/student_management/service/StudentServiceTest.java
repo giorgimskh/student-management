@@ -224,7 +224,7 @@ public class StudentServiceTest {
 
         assertThatThrownBy(() -> studentService.deleteStudent(studentId))
                 .isInstanceOf(ResourceNotFoundException.class);
-        verify(studentRepository, never()).delete(any());
+        verify(studentRepository, never()).delete(any(Student.class));
         verifyNoInteractions(eventPublisher);
     }
 

@@ -22,6 +22,8 @@ const state = {
     studentPage: 0,
     studentQuery: "",
     statusFilter: "",
+    courseFilter: "",       // course id, or "" for any
+    overdueOnly: false,
     selectedId: null,
     bookPage: 0,
     coursePage: 0,
@@ -169,10 +171,22 @@ function pager(el, page, onMove) {
 
 /* ---------- Navigation ---------- */
 
+/** Fills the course filter on the Students page, keeping the current choice if that course still exists. */
+async function loadCourseFilter() {
+    const page = await attempt(() => api("/api/courses?size=100&sort=courseName"));
+    if (!page) return;
+    const select = $("#courseFilter");
+    if (state.courseFilter && !page.content.some(c => c.id === state.courseFilter)) state.courseFilter = "";
+    select.innerHTML = '<option value="">All courses</option>' + page.content
+        .map(c => `<option value="${esc(c.id)}">${esc(c.code ? `${c.courseName} (${c.code})` : c.courseName)}</option>`).join("");
+    select.value = state.courseFilter;
+}
+
 function showView(view) {
     state.view = view;
     $$(".tab").forEach(t => t.classList.toggle("active", t.dataset.view === view));
     $$(".view").forEach(v => v.classList.toggle("active", v.id === `view-${view}`));
+    if (view === "students") loadCourseFilter();
     ({ students: loadStudents, books: loadBooks, courses: loadCourses, activity: loadActivity, reports: loadReports })[view]();
 }
 
@@ -182,11 +196,13 @@ async function loadStudents() {
     const list = $("#studentList");
     if (!list.children.length) list.innerHTML = '<li class="skeleton"></li>'.repeat(4);
     const q = state.studentQuery.trim();
-    const status = state.statusFilter ? `&status=${encodeURIComponent(state.statusFilter)}` : "";
-    const path = q
-        ? `/api/students/search?name=${encodeURIComponent(q)}&page=${state.studentPage}&size=${PAGE_SIZE}&sort=name${status}`
-        : `/api/students?page=${state.studentPage}&size=${PAGE_SIZE}&sort=name${status}`;
-    const page = await attempt(() => api(path));
+    // Every filter goes to one endpoint; the server builds a StudentSearch from whichever are set.
+    const params = new URLSearchParams({ page: state.studentPage, size: PAGE_SIZE, sort: "name" });
+    if (q) params.set("name", q);
+    if (state.statusFilter) params.set("status", state.statusFilter);
+    if (state.courseFilter) params.set("course", state.courseFilter);
+    if (state.overdueOnly) params.set("overdue", "true");
+    const page = await attempt(() => api(`/api/students?${params}`));
     if (!page) { list.innerHTML = '<li class="none">Could not load students.</li>'; return; }
 
     rememberNames({ students: page.content });
@@ -200,7 +216,8 @@ async function loadStudents() {
             </span>
             ${badge(s.status)}
         </li>`).join("")
-        : `<li class="none">${q || state.statusFilter ? "No students match." : "No students yet. Create the first one."}</li>`;
+        : `<li class="none">${q || state.statusFilter || state.courseFilter || state.overdueOnly
+            ? "No students match." : "No students yet. Create the first one."}</li>`;
 
     $$(".row", list).forEach(row => row.addEventListener("click", () => selectStudent(row.dataset.id)));
     pager($("#studentPager"), page, dir => { state.studentPage += dir; loadStudents(); });
@@ -833,6 +850,8 @@ function init() {
         searchTimer = setTimeout(() => { state.studentQuery = e.target.value; state.studentPage = 0; loadStudents(); }, 250);
     });
     $("#statusFilter").addEventListener("change", e => { state.statusFilter = e.target.value; state.studentPage = 0; loadStudents(); });
+    $("#courseFilter").addEventListener("change", e => { state.courseFilter = e.target.value; state.studentPage = 0; loadStudents(); });
+    $("#overdueFilter").addEventListener("change", e => { state.overdueOnly = e.target.checked; state.studentPage = 0; loadStudents(); });
 
     bindCreateForm("#studentForm", "/api/students",
         f => ({ name: f.get("name"), email: f.get("email") }),

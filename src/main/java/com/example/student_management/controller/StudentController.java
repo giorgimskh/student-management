@@ -18,16 +18,19 @@ import com.example.student_management.dto.PagedResponse;
 import com.example.student_management.dto.StudentRequest;
 import com.example.student_management.dto.StudentResponse;
 import com.example.student_management.mapper.EntityMapper;
+import com.example.student_management.search.StudentSearch;
 import com.example.student_management.service.StudentService;
 import com.example.student_management.state.StudentStatus;
 import com.example.student_management.state.StudentTransition;
-import org.springframework.data.domain.Page;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,25 +55,42 @@ public class StudentController {
         this.courseMapper = courseMapper;
     }
 
+    /**
+     * Lists students, filtered by any combination of: {@code name} and {@code email}
+     * (contains, ignoring case), {@code status} (repeat it for "any of"),
+     * {@code course} (enrolled in), {@code overdue=true} (has a late book), and
+     * {@code createdFrom}/{@code createdTo} (inclusive dates, UTC).
+     */
     @GetMapping
     public ResponseEntity<PagedResponse<StudentResponse>> getAllStudents(
-            @RequestParam(required = false) StudentStatus status,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) List<StudentStatus> status,
+            @RequestParam(required = false) UUID course,
+            @RequestParam(defaultValue = "false") boolean overdue,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             @PageableDefault(size = 10, sort = "name") Pageable pageable) {
-        Page<Student> page = status == null
-                ? studentService.getAllStudents(pageable)
-                : studentService.findStudents(null, status, pageable);
-        return ResponseEntity.ok(PagedResponse.from(page.map(studentMapper::toResponse)));
+        StudentSearch search = StudentSearch.builder()
+                .nameContains(name)
+                .emailContains(email)
+                .statuses(status)
+                .enrolledIn(course)
+                .withOverdueLoans(overdue)
+                .createdFrom(createdFrom == null ? null : createdFrom.atStartOfDay(ZoneOffset.UTC).toInstant())
+                .createdBefore(createdTo == null ? null : createdTo.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant())
+                .build();
+        return ResponseEntity.ok(PagedResponse.from(studentService.findStudents(search, pageable).map(studentMapper::toResponse)));
     }
 
+    /** Name search, kept for existing clients; {@code GET /api/students?name=...} does the same and more. */
     @GetMapping("/search")
     public ResponseEntity<PagedResponse<StudentResponse>> searchStudents(
             @RequestParam String name,
             @RequestParam(required = false) StudentStatus status,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<Student> page = status == null
-                ? studentService.searchStudents(name, pageable)
-                : studentService.findStudents(name, status, pageable);
-        return ResponseEntity.ok(PagedResponse.from(page.map(studentMapper::toResponse)));
+        StudentSearch search = StudentSearch.builder().nameContains(name).status(status).build();
+        return ResponseEntity.ok(PagedResponse.from(studentService.findStudents(search, pageable).map(studentMapper::toResponse)));
     }
 
     @GetMapping("/{id}")

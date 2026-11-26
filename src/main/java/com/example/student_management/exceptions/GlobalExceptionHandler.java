@@ -85,6 +85,11 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidSearchException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidSearchException(InvalidSearchException ex) {
+        return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGlobalException(Exception ex) {
         // Spring MVC's own exceptions (unknown route, wrong method, missing param/part,

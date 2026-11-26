@@ -4,6 +4,7 @@ import com.example.student_management.domain.Book;
 import com.example.student_management.domain.Course;
 import com.example.student_management.domain.Student;
 import com.example.student_management.domain.StudentMemento;
+import com.example.student_management.search.StudentSearch;
 import com.example.student_management.state.StudentStatus;
 import com.example.student_management.state.StudentTransition;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,7 @@ public interface StudentService {
 
     Page<Student> getAllStudents(Pageable pageable);
 
+    /** Students whose name contains {@code name}, ignoring case. Same as {@link #findStudents(StudentSearch, Pageable)} with only a name. */
     Page<Student> searchStudents(String name, Pageable pageable);
 
     /**
@@ -26,6 +28,9 @@ public interface StudentService {
      * filter may be null or blank, in which case it is not applied.
      */
     Page<Student> findStudents(String name, StudentStatus status, Pageable pageable);
+
+    /** Students matching every condition set on {@code search}; "overdue" is judged against the current time. */
+    Page<Student> findStudents(StudentSearch search, Pageable pageable);
 
     Student createStudent(Student student);
 
